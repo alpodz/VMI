@@ -11,16 +11,17 @@ namespace Api
     {
         [FunctionName("Function")]
         public static void Run([CosmosDBTrigger(
-            databaseName: "databaseName",
+            databaseName: "VMI",
             collectionName: "collectionName",
             ConnectionStringSetting = "ConnectionStrings",
-            LeaseCollectionName = "leases")]IReadOnlyList<Document> input,
+            LeaseCollectionName = "leases",
+            CreateLeaseCollectionIfNotExists = true)]IReadOnlyList<Items> input,
             ILogger log)
         {
             if (input != null && input.Count > 0)
             {
                 log.LogInformation("Documents modified " + input.Count);
-                log.LogInformation("First document Id " + input[0].Id);
+                log.LogInformation("First document Id " + input[0].id);
             }
         }
     }
