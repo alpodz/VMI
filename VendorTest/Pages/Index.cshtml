@@ -1,0 +1,141 @@
+﻿@page
+@{
+    ViewData["Title"] = "Home Page";
+}
+@model IndexModel
+@if (Request.HasFormContentType)
+{
+    // Save Form
+    WebHost.HandleFormCollection(Request.Form);
+    // Reload Collection
+    Program.MainDBCollections = (Dictionary<Type, Dictionary<String, Base>>)Base.PopulateMainCollection(Program.DBLocation);
+}
+@{
+    Base[] rows = WebHost.GetRows(Request);
+    if (rows == null) return;
+    ViewData["Title"] = WebHost.CurrentType.Name;
+}
+<form method="POST" name="_Save">
+    <div class="container">
+        <div class="row justify-content-md-center">
+            <div class="col-md-1 readonly"></div>
+            @{
+                foreach (var prop in WebHost.CurrentTypeProperties)
+                {
+                    if (WebHost.CurrentTypePrimaryKey == prop.Name) continue;
+                    if (Base.GetDisplayProperty(prop, typeof(Base.DisplayWidth), "") == "0") continue;
+                    var Label = Base.GetDisplayProperty(prop, typeof(Base.Label), prop.Name);
+                    <div class="col-md-1 readonly">@Label</div>
+                }
+            }
+        </div>
+        @{
+            for (var rownum = 0; rownum <= rows.Count() - 1; rownum++)
+            {
+                var row = rows[rownum];
+                ((IBase)row).PopulateDerivedFields(Program.DBLocation, ref Program.MainDBCollections);
+                String primaryValue = row.GetPrimaryKeyValue();
+                <div class="row justify-content-md-center">
+                    @foreach (var prop in WebHost.CurrentTypeProperties)
+                    {
+                        var width = Base.GetDisplayProperty(prop, typeof(Base.DisplayWidth), "20");
+                        if (width == "0") continue;
+
+                        String propName = rownum + "_" + prop.Name;
+                        String propValue = String.Empty;
+                        if (prop.GetValue(row) != null)
+                        {
+                            propValue = prop.GetValue(row).ToString();
+                            if (prop.PropertyType == typeof(DateTime?))
+                                propValue = ((DateTime?)prop.GetValue(row)).Value.ToString("yyyy-MM-dd");
+                        }
+
+                        if (WebHost.CurrentTypePrimaryKey == prop.Name)
+                        {
+                            <div class="col-md-1 readonly">
+                                <input type="hidden" name="type" value="@row.GetType().ToString()" />
+                                <input type="hidden" name="id" value="@propValue" />
+                                <input type="submit" name="@(rownum + "_Delete")" value="X" width="20" />
+                            </div>
+                        }
+                        else if (Base.GetAttribute(prop, typeof(Base.ForeignKey), out var foreignkey))
+                        {
+                            Type foreignkeytype = ((Base.ForeignKey)foreignkey).GetName();
+                            var foreignidproperty = Base.GetPrimary(foreignkeytype);
+                            var foreignnameproperty = foreignkeytype.GetProperty("Name");
+                            if (foreignnameproperty == null) foreignnameproperty = foreignidproperty;
+                            <div class="col-md-1">
+                                <select name="@propName" value="">
+                                    @foreach (var table in Program.MainDBCollections[foreignkeytype].Values)
+                                    {
+                                        var idvalue = foreignidproperty.GetValue(table);
+                                        var namevalue = foreignnameproperty.GetValue(table);
+                                        if ((String)propValue == (String)idvalue)
+                                        {
+                                            <option value="@idvalue" selected label="@namevalue" />
+                                        }
+                                        else
+                                        {
+                                            <option value="@idvalue" label="@namevalue" />
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        }
+                        else
+                        {
+                            string isreadonly = Base.GetAttribute(prop, typeof(System.Text.Json.Serialization.JsonIgnoreAttribute)) || Base.GetAttribute(prop, typeof(Base.ReadOnly)) ? "readonly" : "notreadonly";
+
+                            <div class="col-md-1 @isreadonly">
+                                @if (prop.PropertyType == typeof(DateTime?))
+                                {
+                                    if (@propValue != "")
+                                    {
+                                        <input type="date" name="@propName" value="@propValue" @isreadonly />
+                                    }
+                                    else
+                                    {
+                                        <button name="@propName" value="@DateTime.Now.Date">Attempt</button>
+                                    }
+                                }
+                                else if (prop.PropertyType != typeof(bool))
+                                {
+                                    <input type="text" name="@propName" value="@propValue" size=@width @isreadonly />
+                                }
+                                else
+                                {
+                                    string ischecked = propValue == "True" ? "checked" : "";
+                                    <input type="checkbox" name="@propName" value="True" size=@width @ischecked @isreadonly />
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+
+                var tables = IndexModel.ReferencedTables(WebHost.CurrentType);
+                    if (tables.Count > 0)
+                    {
+                        <div class="row justify-content-md-center">
+                            @foreach (var table in tables)
+                            {
+                                <div class="col-md-1">
+                                    <a href="/?table=@table.FullName&key=@primaryValue">@table.Name</a>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                // after loading the object, set the collection
+                rows[rownum].MainDBCollections = Program.MainDBCollections;
+                rows[rownum].DBLocation = Program.DBLocation;
+
+            }
+        }
+    <input type="hidden" name="_Add_Type" value="@WebHost.CurrentType.FullName.ToString()" />
+    <button name="_Add" value="Add"><img src="~/images/plus.png" width="20" height="20" /></button>
+    <button name="_Save" value="Save"><img src="~/images/pngfind.com-save-icon-png-2201567.png" width="20" height="20" /></button>
+    <button name="_Previous_0" value="Previous"><img src="~/images/sort-left.png" width="20" height="20" /></button>
+    <button name="_Next_0" value="Next"><img src="~/images/sort-right.png" width="20" height="20" /></button>
+        </div>
+</form>
+
