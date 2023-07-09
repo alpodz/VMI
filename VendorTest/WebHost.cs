@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -24,13 +25,19 @@ namespace VendorTest
                 CurrentPage = new ConcurrentDictionary<int, int>();
                 var CurrentProperties = new List<PropertyInfo>();
                 CurrentProperties.Add(Base.GetPrimary(CurrentType));
-                foreach (var prop in CurrentType.GetProperties())
+                foreach (var prop in GetProperties(CurrentType))
                     if (!CurrentProperties.Contains(prop)) CurrentProperties.Add(prop);
                 CurrentTypeProperties = CurrentProperties.ToArray();
                 CurrentTypePrimaryKey = Base.GetPrimaryKey(CurrentType);
             }
         }
 
+        [UnconditionalSuppressMessage("Don't worry about it", "IL2070")]
+        public static IEnumerable<PropertyInfo> GetProperties(Type entityType)
+        {
+            IEnumerable<PropertyInfo> result = entityType.GetProperties();
+            return result;
+        }
 
         public static PropertyInfo[] CurrentTypeProperties { get; private set; }
 
@@ -100,7 +107,7 @@ namespace VendorTest
          
         private static IEnumerable<Base> QueryForReferencedItem(System.Type currentType, System.Type ForeignKeyType, String ForeignKeyNumber)
         {
-            List<Base> output = new List<Base>();
+            List<Base> output = new();
             System.Reflection.PropertyInfo foundprop = FindProp(currentType, ForeignKeyType);
             if (foundprop == null) return output;
             foreach (var item in Program.MainDBCollections[ForeignKeyType].Values)
@@ -115,7 +122,7 @@ namespace VendorTest
 
         private static System.Reflection.PropertyInfo FindProp(System.Type currentType, System.Type ForeignKeyType)
         {
-            foreach (var tableprop in ForeignKeyType.GetProperties())
+            foreach (var tableprop in GetProperties(ForeignKeyType))
             {
                 if (Base.GetAttribute(tableprop, typeof(Base.ForeignKey), out var foreignkey))
                     if (((Base.ForeignKey)foreignkey).GetName().FullName == currentType.FullName)
@@ -130,9 +137,12 @@ namespace VendorTest
 
             if (fm.ContainsKey("_Add") && fm.ContainsKey("_Add_Type"))
             {
-                Type addtype = Assembly.Load("Core").GetType(fm["_Add_Type"].ToString());
-                Base.AddtoDBCollection(addtype, Program.MainDBCollections[addtype]);
-                Base.SaveCollection(Program.DBLocation, addtype, Program.MainDBCollections[addtype]);
+                Assembly CoreAssembly = Assembly.Load("Core");
+                Type CoreType = CoreAssembly.GetType(fm["_Add_Type"].ToString());
+                if (CoreType == null) return;
+                Base.AddtoDBCollection(CoreType, Program.MainDBCollections[CoreType]);
+                Base.SaveCollection(Program.DBLocation, CoreType, Program.MainDBCollections[CoreType]);
+                
                 return;
             }
 
@@ -151,11 +161,12 @@ namespace VendorTest
                     {
                         Base item = Program.MainDBCollections[thistype][fm["id"][i]];
 
-                        foreach (var prop in thistype.GetProperties())
+                        foreach (var prop in GetProperties(thistype))
                         {
                             if (Base.GetAttribute(prop, typeof(Base.PrimaryKey))) continue;
                             if (Base.GetAttribute(prop, typeof(JsonIgnoreAttribute))) continue;
                             if (Base.GetAttribute(prop, typeof(Base.ReadOnly))) continue;
+                            if (Base.GetDisplayProperty(prop, typeof(Base.DisplayWidth), "") == "0") continue;
                             if (fm.ContainsKey(i + "_" + prop.Name))
                                 item.SetProperty(prop, fm[i + "_" + prop.Name]);
                             else if (prop.PropertyType == typeof(bool))
@@ -168,6 +179,9 @@ namespace VendorTest
                 }
             }
         }
+
+
+
 
         #endregion
     }

@@ -5,8 +5,9 @@ namespace DB.Admin
     public class WorkcenterAvailability : Base
     {
         [PrimaryKey]
-     
-        public string WorkcenterAvailabilityID { get; set; }
+        public string id { get; set; }
+
+        [PartitionKey]
         [ForeignKey(typeof(Workcenter))]
         public string WorkcenterID { get; set; }
 

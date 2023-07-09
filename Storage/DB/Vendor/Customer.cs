@@ -2,10 +2,9 @@
 {
     public class Customer : Base, IBase
     {
+        [PartitionKey]
         [PrimaryKey]
-
-
-        public string CustomerID { get; set; }
+        public string id { get; set; }
 
         public string Name { get; set; }
         public string Address { get; set; }

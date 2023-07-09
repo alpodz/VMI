@@ -5,8 +5,8 @@ namespace DB.Admin
     public class Recipe: Base
     {
         [PrimaryKey]
-        public string RecipeID { get; set; }
-
+        public string id { get; set; }
+        [PartitionKey]
         [ForeignKey(typeof(Part))]
         public string CreatedPartID { get; set; }
 

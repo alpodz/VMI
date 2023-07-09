@@ -29,21 +29,21 @@ namespace Core
             orders.Clear();
             // create the incoming order 
             var incomingOrder = new Order()
-                { OrderID = OrderedOrderID, VendorOrder = false, TotalAmountOrdered = OrderedPartTotal, DateOrdered = DateTime.Now.Date, Message = String.Empty, RequiredBy = this.RequiredBy };
+                { id = OrderedOrderID, VendorOrder = false, TotalAmountOrdered = OrderedPartTotal, DateOrdered = DateTime.Now.Date, Message = String.Empty, RequiredBy = this.RequiredBy };
                 try
-                    { 
+                    {
                 if (!CheckUserName(from, out var Customer))
                     incomingOrder.Message += $"Unregistered User for email: {from} |";
                 else
-                    incomingOrder.CustomerID = Customer.CustomerID;
+                    incomingOrder.CustomerID = Customer.id;
 
                 Part PartID = MainDBCollections[typeof(Part)].Values.Cast<Part>().FirstOrDefault(a => a.Name == OrderedPartName);
                 if (PartID == null)
                     incomingOrder.Message += $"Part {OrderedPartName} does not exist. |";
                 else
-                    incomingOrder.PartID = PartID.PartID;
+                    incomingOrder.PartID = PartID.id;
 
-                var workcenters = MainDBCollections[typeof(WorkcenterPart)].Values.Cast<WorkcenterPart>().Where(a => a.PartID == PartID.PartID).OrderBy(a => a.PriorityLevel).ToList();
+                var workcenters = MainDBCollections[typeof(WorkcenterPart)].Values.Cast<WorkcenterPart>().Where(a => a.PartID == PartID.id).OrderBy(a => a.PriorityLevel).ToList();
                 if (workcenters.Count == 0)
                     incomingOrder.Message += $"No Workcenters Setup for Part {OrderedPartName} |";
 
@@ -74,7 +74,7 @@ namespace Core
                         if (outgoingOrder != null)
                         {
                             PartsLeftToShip -= PartsInShipment;
-                            outgoingOrder.CustomerID = Customer.CustomerID;
+                            outgoingOrder.CustomerID = Customer.id;
                             outgoingOrder.RequiredBy = RequiredBy;
                             orders.Add(outgoingOrder);
                         }

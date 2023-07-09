@@ -5,8 +5,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DB\Collection.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="S22.Imap.Standard" Version="3.6.1" />
     <PackageReference Include="System.Text.Json" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Interfaces\Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

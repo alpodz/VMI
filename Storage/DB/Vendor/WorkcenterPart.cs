@@ -12,9 +12,10 @@ namespace DB.Vendor
     {
         [PrimaryKey]
 
-        public string WorkcenterPartID { get; set; }
+        public string id { get; set; }
         [ForeignKey(typeof(Workcenter))]
 
+        [PartitionKey]
         public string WorkcenterID { get; set; }
 
         [ForeignKey(typeof(Part))]
@@ -24,6 +25,7 @@ namespace DB.Vendor
         public decimal PartsPerMinute { get; set; }
         public decimal SetupTimeInMinutes { get; set; }
 
+        #region "Methods"
         public Order SchedulePartOnWorkCenter(ref Dictionary<Type, Dictionary<String, Base>> DBCollection, int BatchNumber, int intAmt, DateTime BeginSchedule, DateTime EndSchedule)
         {
             MainDBCollections = DBCollection;
@@ -52,7 +54,7 @@ namespace DB.Vendor
                         PartID = this.PartID,
                         WorkcenterID = WorkcenterID,
                         DateOrdered = DateTime.Now.Date,
-                        OrderID = Guid.NewGuid().ToString()
+                        id = Guid.NewGuid().ToString()
                     };
                     return scheduledOrder;
                 }
@@ -97,5 +99,6 @@ namespace DB.Vendor
                 default:                    return 0;
             }
         }
+        #endregion
     }
 }

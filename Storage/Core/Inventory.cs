@@ -1,6 +1,7 @@
 ﻿using DB;
 using DB.Admin;
 using DB.Vendor;
+using Interfaces;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,12 +13,12 @@ namespace Core
 {
     public class Inventory
     {
-        private readonly string DBLocation;
+        private readonly IDBObject DBLocation;
         private Dictionary<Type, Dictionary<String, Base>> MainDBCollections;
         private static readonly Object EmaiLLock = new Object();
         private static Exchange email;
 
-        public Inventory(string dBLocation, ref Dictionary<Type, Dictionary<String, Base>> mainDBCollections)
+        public Inventory(IDBObject dBLocation, ref Dictionary<Type, Dictionary<String, Base>> mainDBCollections)
         {
             DBLocation = dBLocation;
             MainDBCollections = mainDBCollections;
@@ -114,7 +115,7 @@ namespace Core
                 {
                     var typeofOrder = "Customer";
                     if (order.VendorOrder) typeofOrder = "Vendor";
-                    body += $"{ typeofOrder } Order: {order.OrderID} ";
+                    body += $"{ typeofOrder } Order: {order.id} ";
 
                     switch (queue.Key)
                     {
@@ -154,7 +155,7 @@ namespace Core
                 if (objPart.PullQuantity == 0) return;
                 if (objPart.PullQuantity < (objPart.InStock + objPart.OrderedAmt)) return;
                 // check existing orders
-                if (MainDBCollections[typeof(Order)].Values.Cast<Order>().FirstOrDefault(a => a.PartID == objPart.PartID && a.VendorOrder == true && !a.DateOrdered.HasValue) != null) return;
+                if (MainDBCollections[typeof(Order)].Values.Cast<Order>().FirstOrDefault(a => a.PartID == objPart.id && a.VendorOrder == true && !a.DateOrdered.HasValue) != null) return;
 
                 // we're going to push the required by date because perhaps it's 'too late', we'll make it the current date
                 var requiredby = objPart.DateRequiredBy.Value;
@@ -163,9 +164,9 @@ namespace Core
 
                 var objOrder = new Order()
                 {
-                    OrderID = guid,
+                    id = guid,
                     CustomerID = objPart.AssignedVendorPart.CustomerID,
-                    PartID = objPart.PartID,
+                    PartID = objPart.id,
                     VendorOrder = true,
                     //ShipmentAmount = objPart.PullQuantity,
                     TotalAmountOrdered = objPart.PullQuantity,
@@ -184,7 +185,7 @@ namespace Core
                 if (objPart.DateRequiredBy.GetValueOrDefault(DateTime.MinValue) < DateTime.Now.Date) body += " WARNING: The Date Required is in the Past, we will request the current date plus lead time";
                 body += $"<BR><BR>Reply to this Email to Proceed. (Subject must be: {Exchange.SetSubject(Exchange.EnuReceiveAdmin.RequestVendorOrderResponse.ToString())}).";
 
-                email.SendAdmin(Exchange.EnuSendAdmin.RequestVendorOrder, objOrder.OrderID, body);
+                email.SendAdmin(Exchange.EnuSendAdmin.RequestVendorOrder, objOrder.id, body);
             }
 
         }
@@ -231,7 +232,7 @@ namespace Core
                         //orig.Shipment = order.Shipment;
                         orig.TotalAmountOrdered = order.TotalAmountOrdered;
                         orig.Message = order.Message;
-                        orig.CustomerOrderID = order.OrderID;
+                        orig.CustomerOrderID = order.id;
 
                         response.orders.Remove(order);
                     }
@@ -241,9 +242,9 @@ namespace Core
                     {
                         order.CustomerID = orig.CustomerID;
                         var guid = Guid.NewGuid().ToString();
-                        order.OrderID = guid;
+                        order.id = guid;
                         order.PartID = orig.PartID;
-                        order.CustomerOrderID = order.OrderID;
+                        order.CustomerOrderID = order.id;
                         order.WorkcenterID = "0";
                         MainDBCollections[typeof(Order)].Add(guid, order);
                     }
@@ -265,9 +266,9 @@ namespace Core
             {
                 //order.Shipment = " of " + request.orders.Count;
                 order.TotalAmountOrdered = request.OrderedPartTotal;
-                order.CustomerOrderID = order.OrderID;
-                order.OrderID = Guid.NewGuid().ToString();
-                MainDBCollections[typeof(Order)].Add(order.OrderID, order);
+                order.CustomerOrderID = order.id;
+                order.id = Guid.NewGuid().ToString();
+                MainDBCollections[typeof(Order)].Add(order.id, order);
                 Base.SaveCollection(DBLocation, typeof(Order), MainDBCollections[typeof(Order)]);
             }
             request.body = "Order Response";

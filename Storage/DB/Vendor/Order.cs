@@ -14,9 +14,9 @@ namespace DB.Vendor
     public class Order : Base
     {
         #region "Properties"
-
+        [PartitionKey]
         [PrimaryKey]
-        public string OrderID { get; set; }
+        public string id { get; set; }
         [Label("Vendor Order")]
         [DisplayWidth(6)]
         public bool VendorOrder { get; set; }
@@ -26,6 +26,7 @@ namespace DB.Vendor
         [ForeignKey(typeof(Part))]
         [Label("Part")]
         public string PartID { get; set; }
+
         [ForeignKey(typeof(Workcenter))]
         [Label("WorkCenter")]
         public string WorkcenterID { get; set; }
@@ -86,11 +87,13 @@ namespace DB.Vendor
         private DateTime? dateCompleted;
 
         #endregion
-        
+
+        #region "Methods"
+
         private void SendOrder()
         {
             // only process if these items are set
-            if (MainDBCollections == null || !DateOrdered.HasValue || String.IsNullOrEmpty(PartID) || String.IsNullOrEmpty(CustomerID) || String.IsNullOrEmpty(OrderID)) return;
+            if (MainDBCollections == null || !DateOrdered.HasValue || String.IsNullOrEmpty(PartID) || String.IsNullOrEmpty(CustomerID) || String.IsNullOrEmpty(id)) return;
 
             if (VendorOrder)
             {
@@ -105,7 +108,7 @@ namespace DB.Vendor
 
                 ExchangedOrders exchangedOrders = new ExchangedOrders()
                 {
-                    OrderedOrderID = OrderID,
+                    OrderedOrderID = id,
                     OrderedPartName = VendorPartName,
                     OrderedPartTotal = TotalAmountOrdered,
                     to = PullVendor.EmailAddress,
@@ -154,13 +157,14 @@ namespace DB.Vendor
 
             var objMessage = new Message
             {
-                MessageID = Guid.NewGuid().ToString(),
+                id = Guid.NewGuid().ToString(),
                 MessageText = Message,
                 MessageDate = DateTime.Now,
-                OrderID = OrderID
+                OrderID = id
             };
-            MainDBCollections[typeof(Message)].Add(objMessage.MessageID, objMessage);
+            MainDBCollections[typeof(Message)].Add(objMessage.id, objMessage);
             Base.SaveCollection(DBLocation, typeof(Message), MainDBCollections[typeof(Message)]);
         }
+        #endregion
     }
 }

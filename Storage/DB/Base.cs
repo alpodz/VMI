@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Core.DB;
+using Interfaces;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -9,8 +11,9 @@ using System.Xml;
 
 public class Base : IBase
 {
-    public string DBLocation;
+    public IDBObject DBLocation;
     public Dictionary<Type, Dictionary<String, Base>> MainDBCollections;
+    public bool IsDirty = false;
 
     #region CustomAttributes
 
@@ -34,6 +37,17 @@ public class Base : IBase
     [System.AttributeUsage(System.AttributeTargets.Property)]   
     public class DisplayProperty: System.Attribute
     {       
+        public String _value;
+
+        public String GetValue()
+        {
+            return _value;
+        }
+    }
+
+    [System.AttributeUsage(System.AttributeTargets.Property)]
+    public class PartitionKey : System.Attribute
+    {
         public String _value;
 
         public String GetValue()
@@ -161,36 +175,41 @@ public class Base : IBase
     public void SetProperty(PropertyInfo propertyinfo, string PropertyValue)
     {
         if (propertyinfo == null)                               return;
-        if (PropertyValue == null)                              propertyinfo.SetValue(this, null);
-        else if (propertyinfo.PropertyType == typeof(decimal))  propertyinfo.SetValue(this, Convert.ToDecimal(PropertyValue));
-        else if (propertyinfo.PropertyType == typeof(Int32))    propertyinfo.SetValue(this, Convert.ToInt32(PropertyValue));
-        else if (propertyinfo.PropertyType == typeof(DateTime))
+        if (propertyinfo.GetValue(this) == null && PropertyValue == null) return;
+        if (propertyinfo.PropertyType == typeof(string) && propertyinfo.GetValue(this) == null && PropertyValue == string.Empty) return;
+        if ((propertyinfo.GetValue(this) == null && PropertyValue != null) || propertyinfo.GetValue(this).ToString() != PropertyValue) 
         {
-            var convert = DateTime.MinValue;
-            if (PropertyValue != String.Empty) convert = Convert.ToDateTime(PropertyValue);
-            propertyinfo.SetValue(this, convert);
+            if (PropertyValue == null) propertyinfo.SetValue(this, null);
+            else if (propertyinfo.PropertyType == typeof(decimal)) propertyinfo.SetValue(this, Convert.ToDecimal(PropertyValue));
+            else if (propertyinfo.PropertyType == typeof(Int32)) propertyinfo.SetValue(this, Convert.ToInt32(PropertyValue));
+            else if (propertyinfo.PropertyType == typeof(DateTime))
+            {
+                var convert = DateTime.MinValue;
+                if (PropertyValue != String.Empty) convert = Convert.ToDateTime(PropertyValue);
+                propertyinfo.SetValue(this, convert);
+            }
+            else if (propertyinfo.PropertyType == typeof(DateTime?))
+            {
+                if (PropertyValue != String.Empty) propertyinfo.SetValue(this, Convert.ToDateTime(PropertyValue));
+                else propertyinfo.SetValue(this, null);
+            }
+            else if (propertyinfo.PropertyType == typeof(String)) propertyinfo.SetValue(this, Convert.ToString(PropertyValue));
+            else if (propertyinfo.PropertyType == typeof(bool)) propertyinfo.SetValue(this, Convert.ToBoolean(PropertyValue));
+            else propertyinfo.SetValue(this, PropertyValue);
+            IsDirty = true;
         }
-        else if (propertyinfo.PropertyType == typeof(DateTime?))
-        {
-            if (PropertyValue != String.Empty) propertyinfo.SetValue(this, Convert.ToDateTime(PropertyValue));
-            else propertyinfo.SetValue(this, null);
-        }
-        else if (propertyinfo.PropertyType == typeof(String))   propertyinfo.SetValue(this, Convert.ToString(PropertyValue));
-        else if (propertyinfo.PropertyType == typeof(bool))     propertyinfo.SetValue(this, Convert.ToBoolean(PropertyValue));
-        else                                                    propertyinfo.SetValue(this, PropertyValue);
     }
 
     public static void AddtoDBCollection(Type item, Dictionary<String, Base> instance)
     {
         var newi = (Base)Activator.CreateInstance(item);
         var guid = Guid.NewGuid().ToString();
+        newi.IsDirty = true;
         item.GetRuntimeProperty(GetPrimaryKey(item)).SetValue(newi, guid);
         instance.Add(guid, newi);
-    }
-    
-    private static string FormatFile = "{0}.json";
+    }   
 
-    public static Dictionary<Type, Dictionary<String, Base>> PopulateMainCollection(string DBLocation)
+    public static Dictionary<Type, Dictionary<String, Base>> PopulateMainCollection(IDBObject DBLocation)
     {
         var DBClassObjects = Assembly.Load("Core").GetTypes().Where(t => t.IsSubclassOf(typeof(Base)));
         var MainDBCollections = new Dictionary<Type, Dictionary<String, Base>>();
@@ -200,20 +219,15 @@ public class Base : IBase
         {
             var constr = listType.MakeGenericType(item);
             var instance = (IList)Activator.CreateInstance(constr);
-            var DBFileName = string.Format(DBLocation + FormatFile, item.Name);
-            if (File.Exists(DBFileName))
-            {
-                var jsonreader = new System.Text.Json.Utf8JsonReader(File.ReadAllBytes(DBFileName));
-                var populatedlist = (IList)System.Text.Json.JsonSerializer.Deserialize(ref jsonreader, constr);
-                if (populatedlist != null) instance = populatedlist;
-            }
+            DBLocation.Name = item.Name;
+            DBLocation.PopulateCollection(item, constr, ref instance);            
             MainDBCollections.Add(item, instance.Cast<Base>().ToDictionary(a => a.GetPrimaryKeyValue()));
             // for some collections, I want to include 'None option'            
             if (item == typeof(DB.Admin.Workcenter) && !MainDBCollections[typeof(DB.Admin.Workcenter)].ContainsKey("0"))
             {
                 var DefaultWC = new DB.Admin.Workcenter
                 {
-                    WorkcenterID = "0",
+                    id = "0",
                     Name = "Shipment From Vendor"
                 };
                 MainDBCollections[typeof(DB.Admin.Workcenter)].Add("0", DefaultWC);
@@ -222,33 +236,10 @@ public class Base : IBase
         return MainDBCollections;
     }
 
-    private static string SaveCollection(Type CollectionType, IList CollectionToSave)
+    public static void SaveCollection(IDBObject DBLocation, Type CollectionType, Dictionary<String, Base> CollectionToSave)
     {
-        var listType = typeof(List<>);
-        var constr = listType.MakeGenericType(CollectionType);
-        var instance = (IList)Activator.CreateInstance(constr);
-        foreach (var obj in CollectionToSave)
-        {
-            instance.Add(obj);
-        }
-        using (MemoryStream ms = new MemoryStream())
-        using (var writer = new System.Text.Json.Utf8JsonWriter(ms))
-        {
-            System.Text.Json.JsonSerializer.Serialize(writer, instance, constr);
-            return System.Text.Encoding.UTF8.GetString(ms.ToArray());
-        }
-    }
-
-    public static void SaveCollection(String DBLocation, Type CollectionType, Dictionary<String, Base> CollectionToSave)
-    {        
         IList col = CollectionToSave.Values.ToList();
-        string json = SaveCollection(CollectionType, col);
-        var DBFileName = string.Format(DBLocation + FormatFile, CollectionType.Name);
-        string tempFile = Path.GetTempFileName();
-        File.WriteAllText(tempFile, json);
-        if (File.Exists(DBFileName))
-            File.Delete(DBFileName);
-        File.Move(tempFile, DBFileName);
+        DBLocation.SaveCollection(CollectionType, col);
     }
 
     public ICollection Collection(Type Table)
@@ -257,8 +248,9 @@ public class Base : IBase
     }
 
     // Note: This is here so that children can implement
-    public void PopulateDerivedFields(String DBLocation, ref Dictionary<Type, Dictionary<String, Base>> MainDB) { }
-
+    public void PopulateDerivedFields(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, Base>> MainDB) { }
+    [DisplayWidth(0)]
+    public string Partition { get { return $"_{this.GetType().Name}_{Base.GetKey(this.GetType(), "PartitionKey").GetValue(this)}"; } }
 }
     
 

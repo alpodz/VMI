@@ -1,4 +1,7 @@
 ﻿using Core;
+using Core.DB;
+using Interfaces;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -12,7 +15,7 @@ namespace VendorTest
     public static partial class Program
     {
 
-        public static String DBLocation { get; set; }
+        public static IDBObject DBLocation { get; set; }
 
         public static IConfiguration Configuration;
 
@@ -38,8 +41,11 @@ namespace VendorTest
         public static void Init(IConfiguration configfromstartup)
         {
             Configuration = configfromstartup;
-            DBLocation = Configuration.GetValue<String>("DBLocation");
+            //DBLocation = new FileObject(Configuration["DBLocation"]);
+            DBLocation = new CosmosDB.CosmoObject(Configuration["ConnectionStrings:AzureCosmos"]);
             MainDBCollections = Base.PopulateMainCollection(DBLocation);
+
+            
             //SetTimer();
         }
 

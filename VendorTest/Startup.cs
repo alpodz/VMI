@@ -28,7 +28,7 @@ namespace VendorTest
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+            services.AddRazorPages();// AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
             
         }
 

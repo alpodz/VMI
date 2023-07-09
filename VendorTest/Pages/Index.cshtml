@@ -22,10 +22,9 @@
             @{
                 foreach (var prop in WebHost.CurrentTypeProperties)
                 {
-                    if (WebHost.CurrentTypePrimaryKey == prop.Name) continue;
-                    if (Base.GetDisplayProperty(prop, typeof(Base.DisplayWidth), "") == "0") continue;
-                    var Label = Base.GetDisplayProperty(prop, typeof(Base.Label), prop.Name);
-                    <div class="col-md-1 readonly">@Label</div>
+                    if (IndexModel.IsPrimaryKey(prop)) continue;
+                    if (IndexModel.PropertyNotVisible(prop)) continue;
+                    <div class="col-md-1 readonly">@IndexModel.GetLabel(prop)</div>
                 }
             }
         </div>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Interfaces;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,8 @@ namespace DB.Vendor
     {
         [PrimaryKey]
         
-        public string VendorPartID { get; set; }
+        public string id { get; set; }
+        [PartitionKey]
         [ForeignKey(typeof(Part))]
         [Label("Part")]
         public string PartID { get; set; }
@@ -45,7 +47,7 @@ namespace DB.Vendor
         [Label("Pull Required By")]
         public System.DateTime? DateRequiredBy { get; private set; }
 
-        void IBase.PopulateDerivedFields(String DBLoc, ref Dictionary<Type, Dictionary<String,Base> >MainDB)
+        void IBase.PopulateDerivedFields(IDBObject DBLoc, ref Dictionary<Type, Dictionary<String,Base> >MainDB)
         {
             if (MainDB == null || PartID == null) return;
             if (!MainDB[typeof(Part)].ContainsKey(PartID)) return;

@@ -4,8 +4,8 @@
     public class Workcenter : Base
     {
         [PrimaryKey]
-        
-        public string WorkcenterID { get; set; }
+        [PartitionKey]
+        public string id { get; set; }
 
         public string Name { get; set; }
 
