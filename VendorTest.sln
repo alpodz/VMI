@@ -7,9 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VendorTest", "VendorTest\Ve
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core", "Storage\Core.csproj", "{6B5ACBE4-314C-43C3-B593-BBB7D122D16F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CosmosDB", "DB\CosmosDB.csproj", "{B3CC4D23-7036-46DA-ABD6-5E50680F1FC9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CosmosDB", "DB\CosmosDB.csproj", "{B3CC4D23-7036-46DA-ABD6-5E50680F1FC9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Interfaces", "Interfaces\Interfaces.csproj", "{6EFA85EF-46C0-43D6-8291-780E870C8FAD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Interfaces", "Interfaces\Interfaces.csproj", "{6EFA85EF-46C0-43D6-8291-780E870C8FAD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VendorFunctions", "VendorFunctions\VendorFunctions.csproj", "{F3EF0591-05E5-4523-9B46-5622B73802CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{6EFA85EF-46C0-43D6-8291-780E870C8FAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6EFA85EF-46C0-43D6-8291-780E870C8FAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6EFA85EF-46C0-43D6-8291-780E870C8FAD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3EF0591-05E5-4523-9B46-5622B73802CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3EF0591-05E5-4523-9B46-5622B73802CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3EF0591-05E5-4523-9B46-5622B73802CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3EF0591-05E5-4523-9B46-5622B73802CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -24,19 +24,6 @@ namespace Core
             MainDBCollections = mainDBCollections;
         }
 
-        public void ExecuteMaint(Exchange _email)
-        {
-            email = _email;
-            CheckForNeedOfVendorOrder();
-
-            if (email.Client == null) return;
-            // query email server and do what you need to do:
-            foreach (var msg in email.Client.Search(S22.Imap.SearchCondition.All()))
-                ExecuteWorkAgainstMailMessage(msg);
-
-            EmailAdminToDoStuff();
-        }
-
         public void Client_NewMessage(object sender, S22.Imap.IdleMessageEventArgs e)
         {
             ExecuteWorkAgainstMailMessage(e.MessageUID);

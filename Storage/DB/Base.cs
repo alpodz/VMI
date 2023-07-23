@@ -209,19 +209,24 @@ public class Base : IBase
         instance.Add(guid, newi);
     }   
 
+    public static IList PopulateTypeCollection(IDBObject DBLocation, Type item)
+    {
+        var listType = typeof(List<>);
+        var constr = listType.MakeGenericType(item);
+        var instance = (IList)Activator.CreateInstance(constr);
+        DBLocation.Name = item.Name;
+        DBLocation.PopulateCollection(item, constr, ref instance);
+        return instance;
+    }
+
     public static Dictionary<Type, Dictionary<String, Base>> PopulateMainCollection(IDBObject DBLocation)
     {
         var DBClassObjects = Assembly.Load("Core").GetTypes().Where(t => t.IsSubclassOf(typeof(Base)));
         var MainDBCollections = new Dictionary<Type, Dictionary<String, Base>>();
-        var listType = typeof(List<>);
 
         foreach (Type item in DBClassObjects)
         {
-            var constr = listType.MakeGenericType(item);
-            var instance = (IList)Activator.CreateInstance(constr);
-            DBLocation.Name = item.Name;
-            DBLocation.PopulateCollection(item, constr, ref instance);            
-            MainDBCollections.Add(item, instance.Cast<Base>().ToDictionary(a => a.GetPrimaryKeyValue()));
+            MainDBCollections.Add(item, PopulateTypeCollection(DBLocation, item).Cast<Base>().ToDictionary(a => a.GetPrimaryKeyValue()));
             // for some collections, I want to include 'None option'            
             if (item == typeof(DB.Admin.Workcenter) && !MainDBCollections[typeof(DB.Admin.Workcenter)].ContainsKey("0"))
             {

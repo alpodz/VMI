@@ -1,4 +1,5 @@
-﻿using DB.Vendor;
+﻿using Core.Core.API;
+using DB.Vendor;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -70,7 +71,7 @@ namespace Core
 
                     foreach (var rwWorkCenter in workcenters)
                     {
-                        var outgoingOrder = rwWorkCenter.SchedulePartOnWorkCenter(ref DBCollections, ShipmentNumber, PartsInShipment, BeginDateOfProduction, EndDateOfProduction);
+                        var outgoingOrder = WorkCenterPartAPI.SchedulePartOnWorkCenter(ShipmentNumber, PartsInShipment, BeginDateOfProduction, EndDateOfProduction, rwWorkCenter);
                         if (outgoingOrder != null)
                         {
                             PartsLeftToShip -= PartsInShipment;

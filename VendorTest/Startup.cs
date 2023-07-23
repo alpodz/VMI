@@ -10,10 +10,12 @@ namespace VendorTest
 {
     public class Startup
     {
+        public VendorTest.Program program = new Program();
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-            Program.Init(Configuration);
+            program.Init(Configuration);
         }
 
         public IConfiguration Configuration { get; }
