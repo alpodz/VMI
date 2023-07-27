@@ -7,12 +7,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Xml;
 
 public class Base : IBase
 {
     public IDBObject DBLocation;
-    public Dictionary<Type, Dictionary<String, Base>> MainDBCollections;
+    public Dictionary<Type, Dictionary<String, IBase>> MainDBCollections;
     public bool IsDirty = false;
 
     #region CustomAttributes
@@ -34,9 +35,9 @@ public class Base : IBase
         }
     }
 
-    [System.AttributeUsage(System.AttributeTargets.Property)]   
-    public class DisplayProperty: System.Attribute
-    {       
+    [System.AttributeUsage(System.AttributeTargets.Property)]
+    public class DisplayProperty : System.Attribute
+    {
         public String _value;
 
         public String GetValue()
@@ -59,15 +60,15 @@ public class Base : IBase
     public static String Icon = "";
 
     [System.AttributeUsage(System.AttributeTargets.Class)]
-    public class TabIcon: System.Attribute
-    {       
+    public class TabIcon : System.Attribute
+    {
         public TabIcon(String icon)
         {
             Icon = icon;
         }
     }
 
-    public class DefaultValue: DisplayProperty
+    public class DefaultValue : DisplayProperty
     {
         public DefaultValue(String DefaultValue)
         {
@@ -76,11 +77,11 @@ public class Base : IBase
     }
 
     public class Label : DisplayProperty
-    { 
+    {
         public Label(String value)
         {
             _value = value;
-  //          DisplayProperties.Add(typeof(Label), this);
+            //          DisplayProperties.Add(typeof(Label), this);
         }
     }
 
@@ -89,7 +90,7 @@ public class Base : IBase
         public DisplayWidth(int width)
         {
             _value = width.ToString();
-    //        DisplayProperties.Add(typeof(DisplayWidth), this);
+            //        DisplayProperties.Add(typeof(DisplayWidth), this);
         }
     }
 
@@ -155,7 +156,7 @@ public class Base : IBase
         if (attribs.Length == 0) return DefaultValue;
         return ((DisplayProperty)attribs[0]).GetValue();
     }
-    
+
     public static string GetPrimaryKey(Type item)
     {
         var KeyProperty = GetPrimary(item);
@@ -174,10 +175,10 @@ public class Base : IBase
 
     public void SetProperty(PropertyInfo propertyinfo, string PropertyValue)
     {
-        if (propertyinfo == null)                               return;
+        if (propertyinfo == null) return;
         if (propertyinfo.GetValue(this) == null && PropertyValue == null) return;
         if (propertyinfo.PropertyType == typeof(string) && propertyinfo.GetValue(this) == null && PropertyValue == string.Empty) return;
-        if ((propertyinfo.GetValue(this) == null && PropertyValue != null) || propertyinfo.GetValue(this).ToString() != PropertyValue) 
+        if ((propertyinfo.GetValue(this) == null && PropertyValue != null) || propertyinfo.GetValue(this).ToString() != PropertyValue)
         {
             if (PropertyValue == null) propertyinfo.SetValue(this, null);
             else if (propertyinfo.PropertyType == typeof(decimal)) propertyinfo.SetValue(this, Convert.ToDecimal(PropertyValue));
@@ -200,14 +201,14 @@ public class Base : IBase
         }
     }
 
-    public static void AddtoDBCollection(Type item, Dictionary<String, Base> instance)
+    public static void AddtoDBCollection(Type item, Dictionary<String, IBase> instance)
     {
         var newi = (Base)Activator.CreateInstance(item);
         var guid = Guid.NewGuid().ToString();
         newi.IsDirty = true;
         item.GetRuntimeProperty(GetPrimaryKey(item)).SetValue(newi, guid);
         instance.Add(guid, newi);
-    }   
+    }
 
     public static IList PopulateTypeCollection(IDBObject DBLocation, Type item)
     {
@@ -219,14 +220,14 @@ public class Base : IBase
         return instance;
     }
 
-    public static Dictionary<Type, Dictionary<String, Base>> PopulateMainCollection(IDBObject DBLocation)
+    public static Dictionary<Type, Dictionary<String, IBase>> PopulateMainCollection(IDBObject DBLocation)
     {
         var DBClassObjects = Assembly.Load("Core").GetTypes().Where(t => t.IsSubclassOf(typeof(Base)));
-        var MainDBCollections = new Dictionary<Type, Dictionary<String, Base>>();
+        var MainDBCollections = new Dictionary<Type, Dictionary<String, IBase>>();
 
         foreach (Type item in DBClassObjects)
         {
-            MainDBCollections.Add(item, PopulateTypeCollection(DBLocation, item).Cast<Base>().ToDictionary(a => a.GetPrimaryKeyValue()));
+            MainDBCollections.Add(item, PopulateTypeCollection(DBLocation, item).Cast<IBase>().ToDictionary(a => a.GetPrimaryKeyValue()));
             // for some collections, I want to include 'None option'            
             if (item == typeof(DB.Admin.Workcenter) && !MainDBCollections[typeof(DB.Admin.Workcenter)].ContainsKey("0"))
             {
@@ -241,7 +242,7 @@ public class Base : IBase
         return MainDBCollections;
     }
 
-    public static void SaveCollection(IDBObject DBLocation, Type CollectionType, Dictionary<String, Base> CollectionToSave)
+    public static void SaveCollection(IDBObject DBLocation, Type CollectionType, Dictionary<String, IBase> CollectionToSave)
     {
         IList col = CollectionToSave.Values.ToList();
         DBLocation.SaveCollection(CollectionType, col);
@@ -253,10 +254,9 @@ public class Base : IBase
     }
 
     // Note: This is here so that children can implement
-    public void PopulateDerivedFields(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, Base>> MainDB) { }
+    public void PopulateDerivedFields(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, IBase>> MainDB) { }
     [DisplayWidth(0)]
     public string Partition { get { return $"_{this.GetType().Name}_{Base.GetKey(this.GetType(), "PartitionKey").GetValue(this)}"; } }
 }
-    
 
 

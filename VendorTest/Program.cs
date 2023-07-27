@@ -20,7 +20,7 @@ namespace VendorTest
 
         public static IConfiguration Configuration;
 
-        public static Dictionary<Type, Dictionary<String, Base>> MainDBCollections;
+        public static Dictionary<Type, Dictionary<String, IBase>> MainDBCollections;
 
         public static void Main(string[] args)
         {
@@ -42,7 +42,6 @@ namespace VendorTest
             //DBLocation = new FileObject(Configuration["DBLocation"]);
             DBLocation = new CosmosDB.CosmoObject(Configuration["ConnectionStrings:AzureCosmos"]);
             MainDBCollections = Base.PopulateMainCollection(DBLocation);
-            WorkCenterPartAPI.DBCollection = MainDBCollections;
             OrderAPI.MainDBCollections = MainDBCollections;
             //Exchange.SetTimer();
         }

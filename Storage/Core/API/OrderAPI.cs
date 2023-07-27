@@ -10,42 +10,11 @@ namespace Core.Core.API
 
     public class OrderAPI
     {
-        public static Dictionary<Type, Dictionary<string, Base>> MainDBCollections;
+        public static Dictionary<Type, Dictionary<string, IBase>> MainDBCollections;
 
-        public static void SendOrder(Order Order)
+        public static void SendOrder(Order order)
         {
-            // only process if these items are set
-            if (MainDBCollections == null || !Order.DateOrdered.HasValue || String.IsNullOrEmpty(Order.PartID) || String.IsNullOrEmpty(Order.CustomerID) || String.IsNullOrEmpty(Order.id)) return;
-
-            if (Order.VendorOrder)
-            {
-                var part = (Part)MainDBCollections[typeof(Part)][Order.PartID];
-                var PullVendor = (Customer)MainDBCollections[typeof(Customer)][Order.CustomerID];
-                if (PullVendor == null || part == null) return;
-
-                if (!part.Populated) part.PopulateDerivedFields(Order.DBLocation, ref MainDBCollections);
-                if (part.AssignedVendorPart == null) return;
-
-                Order.VendorPartName = part.AssignedVendorPart.VendorPartName;
-
-                ExchangedOrders exchangedOrders = new ExchangedOrders()
-                {
-                    OrderedOrderID = Order.id,
-                    OrderedPartName = Order.VendorPartName,
-                    OrderedPartTotal = Order.TotalAmountOrdered,
-                    to = PullVendor.EmailAddress,
-                    body = "Order Request"
-                };
-                // we're going to push the required by date because perhaps it's 'too late', we'll make it the current date
-                var requiredby = part.DateRequiredBy.Value;
-                if (requiredby < DateTime.Now.Date) requiredby = DateTime.Now.Date.AddDays(part.AssignedVendorPart.LeadDays);
-
-                exchangedOrders.RequiredBy = requiredby;
-                if (Order.DateScheduled.HasValue) exchangedOrders.RequiredBy = Order.DateScheduled.Value;
-
-                var mail = new Exchange(ref MainDBCollections);
-                mail.SendAuto(Exchange.EnuSendAuto.SendVendorOrder, exchangedOrders);
-            }
+            
         }
 
         public static void AdjustInventory(Order Order)

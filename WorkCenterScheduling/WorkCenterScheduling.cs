@@ -1,14 +1,68 @@
-﻿using DB.Admin;
-using DB.Vendor;
 using System;
+using Microsoft.Azure.Documents;
 using System.Collections.Generic;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Extensions.Logging;
+using DB.Vendor;
 using System.Linq;
-using System.Text;
+using DB.Admin;
+using Microsoft.Azure.WebJobs.Extensions.Storage;
+using Microsoft.Extensions.Configuration;
 
-namespace Core.Core.API
+namespace WorkCenterScheduling
+
 {
-    public class WorkCenterPartAPI
+    public class MainDB
     {
+        public Dictionary<Type, Dictionary<string, Base>> LoadMainDB(ExecutionContext context)
+        {
+            var configurationBuilder = new ConfigurationBuilder()
+         .SetBasePath(context.FunctionAppDirectory)
+         .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
+         .AddEnvironmentVariables()
+         .Build();
+
+            string myappsettingsValue = configurationBuilder["ConnectionStrings:MyConnection"];
+
+            //            if (email.Client == null) return;
+            // query email server and do what you need to do:
+            //              foreach (var msg in email.Client.Search(S22.Imap.SearchCondition.All()))
+            //                ExecuteWorkAgainstMailMessage(msg);
+
+            //          EmailAdminToDoStuff();
+            //    }
+
+            var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
+            var MainDBCollections = Base.PopulateMainCollection(DBLocation);
+            return MainDBCollections;
+        }
+    }
+
+    public class Message
+    {
+        public int BatchNumber = 0;
+        public int intAmt = 0;
+        public DateTime BeginSchedule;
+        public DateTime EndSchedule;
+        public WorkcenterPart WorkcenterPart;
+    }
+
+    public class WorkCenterScheduling
+    {
+        [FunctionName("SchedulePartOnWorkCenter")]
+        public void SchedulePartOnWorkCenter([QueueTrigger("ScheduleWork", Connection = "WorkcenterConnection")] Message WorkCenterMessage,
+            [Queue("WorkCenterScheduledOrder")] Order outqueue,
+            ExecutionContext context,
+            ILogger log)
+        {
+            log.LogInformation($"C# Queue trigger function processed: {WorkCenterMessage}");
+
+            DBCollection = new MainDB().LoadMainDB(context);
+
+            outqueue = SchedulePartOnWorkCenter(WorkCenterMessage.BatchNumber, WorkCenterMessage.intAmt, WorkCenterMessage.BeginSchedule, WorkCenterMessage.EndSchedule, WorkCenterMessage.WorkcenterPart);
+        }
+
         public static Dictionary<Type, Dictionary<string, Base>> DBCollection;
 
         public static Order SchedulePartOnWorkCenter(int BatchNumber, int intAmt, DateTime BeginSchedule, DateTime EndSchedule, WorkcenterPart WorkcenterPart)
@@ -84,4 +138,6 @@ namespace Core.Core.API
             }
         }
     }
+
+
 }

@@ -47,7 +47,7 @@ namespace DB.Vendor
         [Label("Pull Required By")]
         public System.DateTime? DateRequiredBy { get; private set; }
 
-        void IBase.PopulateDerivedFields(IDBObject DBLoc, ref Dictionary<Type, Dictionary<String,Base> >MainDB)
+        void IBase.PopulateDerivedFields(IDBObject DBLoc, ref Dictionary<Type, Dictionary<String,IBase> >MainDB)
         {
             if (MainDB == null || PartID == null) return;
             if (!MainDB[typeof(Part)].ContainsKey(PartID)) return;

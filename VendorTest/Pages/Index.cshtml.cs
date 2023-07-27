@@ -73,9 +73,9 @@ namespace VendorTest.Pages
 
             public static String CurrentTypePrimaryKey { get; private set; }
 
-            public static Base[] GetRows(Microsoft.AspNetCore.Http.HttpRequest httpRequest)
+            public static IBase[] GetRows(Microsoft.AspNetCore.Http.HttpRequest httpRequest)
             {
-                Base[] rows;
+                IBase[] rows;
                 System.Type newType = null;
                 if (httpRequest.Query.ContainsKey("table"))
                     newType = GetTypeFromCollection(httpRequest.Query["table"].ToString());
@@ -91,7 +91,7 @@ namespace VendorTest.Pages
                     if (newType == null) return null;
                     CurrentType = newType;
                     if (CurrentType == null || CurrentTypePrimaryKey == null) return null;
-                    rows = Program.MainDBCollections[CurrentType].Values.Cast<Base>().Skip(CurrentPage.GetOrAdd(0, 0) * 10).Take(10).ToArray();
+                    rows = Program.MainDBCollections[CurrentType].Values.Cast<IBase>().Skip(CurrentPage.GetOrAdd(0, 0) * 10).Take(10).ToArray();
                 }
                 return rows;
             }
@@ -135,9 +135,9 @@ namespace VendorTest.Pages
 
             private static ConcurrentDictionary<int, int> CurrentPage { get; set; } = new ConcurrentDictionary<int, int>();
 
-            private static IEnumerable<Base> QueryForReferencedItem(System.Type currentType, System.Type ForeignKeyType, String ForeignKeyNumber)
+            private static IEnumerable<IBase> QueryForReferencedItem(System.Type currentType, System.Type ForeignKeyType, String ForeignKeyNumber)
             {
-                List<Base> output = new();
+                List<IBase> output = new();
                 System.Reflection.PropertyInfo foundprop = FindProp(currentType, ForeignKeyType);
                 if (foundprop == null) return output;
                 foreach (var item in Program.MainDBCollections[ForeignKeyType].Values)
@@ -189,7 +189,7 @@ namespace VendorTest.Pages
                         }
                         else
                         {
-                            Base item = Program.MainDBCollections[thistype][fm["id"][i]];
+                            Base item = (Base)Program.MainDBCollections[thistype][fm["id"][i]];
 
                             foreach (var prop in GetProperties(thistype))
                             {

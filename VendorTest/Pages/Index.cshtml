@@ -8,10 +8,10 @@
     // Save Form
     IndexModel.HandleFormCollection(Request.Form);
     // Reload Collection
-    Program.MainDBCollections = (Dictionary<Type, Dictionary<String, Base>>)Base.PopulateMainCollection(Program.DBLocation);
+    Program.MainDBCollections = (Dictionary<Type, Dictionary<String, IBase>>)Base.PopulateMainCollection(Program.DBLocation);
 }
 @{
-    Base[] rows = IndexModel.GetRows(Request);
+    IBase[] rows = IndexModel.GetRows(Request);
     if (rows == null) return;
     ViewData["Title"] = IndexModel.CurrentType.Name;
 }

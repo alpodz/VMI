@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Timers;
 
@@ -103,37 +104,34 @@ namespace Core
             return;
         }
 
+        public class Message
+        {
+            public string From = string.Empty;
+            public string Subject = String.Empty;
+            public string Body = String.Empty;
+            public ExchangedOrders IncomingOrder = null;
+        }
+
         // retrieves requests for parts, calculate if this is possible, and send a response -- 'queues and waits for confirmation'
         // also recieves confirmations, this will set up a shipment
-        public static ExchangedOrders RetrieveMail(MailMessage msg, string req)
+        public static ExchangedOrders RetrieveMail(Message msg, string req)
         {
             if (msg.Subject.StartsWith(SetSubject(req)))
             {
-                var incomingOrder = new ExchangedOrders();
-                if (msg.Attachments.Count == 1)
-                {
-                    using (var att = msg.Attachments[0])
-                    using (StreamReader sr = new StreamReader(att.ContentStream))
-                    {
-                        incomingOrder = System.Text.Json.JsonSerializer.Deserialize<ExchangedOrders>(sr.ReadToEnd());
-                    }
-                }
-                else
-                    incomingOrder.OrderedOrderID = msg.Subject.Substring(SetSubject(req).Length, 36);
+                msg.IncomingOrder.OrderedOrderID = msg.Subject.Substring(SetSubject(req).Length, 36);
+                msg.IncomingOrder.subject = msg.Subject;
+                msg.IncomingOrder.from = msg.From;
+                msg.IncomingOrder.body = msg.Body;
 
-                incomingOrder.subject = msg.Subject;
-                incomingOrder.from = msg.From.Address;
-                incomingOrder.body = msg.Body;
-
-                if (!String.IsNullOrEmpty(incomingOrder.OrderedOrderID))
-                    return incomingOrder;
+                if (!String.IsNullOrEmpty(msg.IncomingOrder.OrderedOrderID))
+                    return msg.IncomingOrder;
             }
             return null;
         }
 
         public void SendEmail(Attachment attach, string To, string Subject, string Body, bool isHtml)
         {
-            using (var msg = new MailMessage(RequiredValues[user], To, Subject, Body))
+            using (var msg = new Message(RequiredValues[user], To, Subject, Body))
             using (var client = new SmtpClient(RequiredValues[smtp], 587))
             {
                 client.EnableSsl = true;

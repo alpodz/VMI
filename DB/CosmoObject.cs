@@ -5,6 +5,7 @@ using Microsoft.Azure.Cosmos.Core;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.Azure.Cosmos.Serialization.HybridRow;
 using Microsoft.Azure.Cosmos.Spatial;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -102,5 +103,7 @@ namespace CosmosDB
                 item.IsDirty = false;
             }
         }
+
     }
+
 }

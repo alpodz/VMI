@@ -71,7 +71,7 @@ namespace Core
 
                     foreach (var rwWorkCenter in workcenters)
                     {
-                        var outgoingOrder = WorkCenterPartAPI.SchedulePartOnWorkCenter(ShipmentNumber, PartsInShipment, BeginDateOfProduction, EndDateOfProduction, rwWorkCenter);
+                        var outgoingOrder = WorkCenterScheduling.WorkCenterScheduling.SchedulePartOnWorkCenter(ShipmentNumber, PartsInShipment, BeginDateOfProduction, EndDateOfProduction, rwWorkCenter);
                         if (outgoingOrder != null)
                         {
                             PartsLeftToShip -= PartsInShipment;
@@ -102,15 +102,17 @@ namespace Core
             return false;
         }
 
-        public ExchangedOrders()
-        {
-        }
 
         private bool CheckUserName(string strUserName, out Customer customer)
         {
             customer = MainDBCollections[typeof(Customer)].Values.Cast<Customer>()
                .FirstOrDefault(a => a.EmailAddress == strUserName);
             return customer != null;
+        }
+
+
+        public ExchangedOrders()
+        {
         }
     }
 }

@@ -11,7 +11,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CosmosDB", "DB\CosmosDB.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Interfaces", "Interfaces\Interfaces.csproj", "{6EFA85EF-46C0-43D6-8291-780E870C8FAD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VendorFunctions", "VendorFunctions\VendorFunctions.csproj", "{F3EF0591-05E5-4523-9B46-5622B73802CF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FuncIncomingOrder", "VendorFunctions\FuncIncomingOrder.csproj", "{F3EF0591-05E5-4523-9B46-5622B73802CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FuncOutgoingOrder", "Outgoing\FuncOutgoingOrder.csproj", "{567F3727-42FF-4434-B817-C46C26BB3A75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FuncScheduleOrder", "WorkCenterScheduling\FuncScheduleOrder.csproj", "{ED18E857-7902-4005-8FE9-4901D0DD6A9B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +43,14 @@ Global
 		{F3EF0591-05E5-4523-9B46-5622B73802CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F3EF0591-05E5-4523-9B46-5622B73802CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F3EF0591-05E5-4523-9B46-5622B73802CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{567F3727-42FF-4434-B817-C46C26BB3A75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{567F3727-42FF-4434-B817-C46C26BB3A75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{567F3727-42FF-4434-B817-C46C26BB3A75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{567F3727-42FF-4434-B817-C46C26BB3A75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED18E857-7902-4005-8FE9-4901D0DD6A9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED18E857-7902-4005-8FE9-4901D0DD6A9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED18E857-7902-4005-8FE9-4901D0DD6A9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED18E857-7902-4005-8FE9-4901D0DD6A9B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

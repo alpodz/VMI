@@ -54,12 +54,12 @@ namespace DB.Vendor
         public VendorPart AssignedVendorPart;
         public bool Populated = false;
 
-        void IBase.PopulateDerivedFields(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, Base>> MainDB)
+        void IBase.PopulateDerivedFields(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, IBase>> MainDB)
         {
             CalculateFields(DBLocation, ref MainDB);
         }
 
-        public void CalculateFields(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, Base>> MainDB)
+        public void CalculateFields(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, IBase>> MainDB)
         {
             if (MainDB == null) return;
             double NumberOfDaysForEstimation = 0;
