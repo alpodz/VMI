@@ -9,13 +9,6 @@
     },
     "secrets1": {
       "type": "secrets.user"
-    },
-    "cosmosdb1": {
-      "serviceConnectorResourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.ServiceLinker/locations/eastus/connectors/ConnectionStringsMyConnection_5F9F5D1026",
-      "secretStore": "LocalSecretsFile",
-      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.DocumentDB/databaseAccounts/vmicosmos",
-      "type": "cosmosdb.azure",
-      "connectionId": "ConnectionStrings:MyConnection"
     }
   }
 }

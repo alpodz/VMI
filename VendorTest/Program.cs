@@ -1,6 +1,7 @@
 ﻿using Core;
 using Core.Core.API;
 using Core.DB;
+using CosmosDB;
 using Interfaces;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Hosting;
@@ -22,6 +23,9 @@ namespace VendorTest
 
         public static Dictionary<Type, Dictionary<String, IBase>> MainDBCollections;
 
+        public static IQueueService SendOrderService;
+        public static IQueueService AdjInventoryService;
+
         public static void Main(string[] args)
         {
             CreateHostBuilder(args).Build().Run();
@@ -42,8 +46,8 @@ namespace VendorTest
             //DBLocation = new FileObject(Configuration["DBLocation"]);
             DBLocation = new CosmosDB.CosmoObject(Configuration["ConnectionStrings:AzureCosmos"]);
             MainDBCollections = Base.PopulateMainCollection(DBLocation);
-            OrderAPI.MainDBCollections = MainDBCollections;
-            //Exchange.SetTimer();
+            SendOrderService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], "Outgoing");
+            AdjInventoryService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], "Outgoing");
         }
                
     }

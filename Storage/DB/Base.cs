@@ -1,4 +1,5 @@
-﻿using Core.DB;
+﻿using Core.Core.API;
+using Core.DB;
 using Interfaces;
 using System;
 using System.Collections;
@@ -12,8 +13,11 @@ using System.Xml;
 
 public class Base : IBase
 {
-    public IDBObject DBLocation;
-    public Dictionary<Type, Dictionary<String, IBase>> MainDBCollections;
+    private IDBObject _DBLocation;
+    private Dictionary<Type, Dictionary<String, IBase>> _MainDBCollections;
+    public static IQueueService _SendOrderService;
+    public static IQueueService _AdjInventoryService;
+
     public bool IsDirty = false;
 
     #region CustomAttributes
@@ -248,15 +252,22 @@ public class Base : IBase
         DBLocation.SaveCollection(CollectionType, col);
     }
 
-    public ICollection Collection(Type Table)
-    {
-        return MainDBCollections[Table].Values;
-    }
+    //public ICollection Collection(Type Table)
+    //{
+    //    return MainDBCollections[Table].Values;
+    //}
 
     // Note: This is here so that children can implement
     public void PopulateDerivedFields(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, IBase>> MainDB) { }
     [DisplayWidth(0)]
     public string Partition { get { return $"_{this.GetType().Name}_{Base.GetKey(this.GetType(), "PartitionKey").GetValue(this)}"; } }
+
+    Dictionary<Type, Dictionary<string, IBase>> IBase.MainDBCollections { get => _MainDBCollections; set => _MainDBCollections = value; }
+    IDBObject IBase.DBLocation { get => _DBLocation; set => _DBLocation = value; }
+
+    IQueueService IBase.AdjInventoryService { get => _AdjInventoryService; set => _AdjInventoryService = value; }
+    IQueueService IBase.SendOrderService { get => _SendOrderService; set => _SendOrderService = value; }
+
 }
 
 

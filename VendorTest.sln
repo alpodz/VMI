@@ -11,11 +11,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CosmosDB", "DB\CosmosDB.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Interfaces", "Interfaces\Interfaces.csproj", "{6EFA85EF-46C0-43D6-8291-780E870C8FAD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FuncIncomingOrder", "VendorFunctions\FuncIncomingOrder.csproj", "{F3EF0591-05E5-4523-9B46-5622B73802CF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HTGetOrders", "VendorFunctions\HTGetOrders.csproj", "{F3EF0591-05E5-4523-9B46-5622B73802CF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FuncOutgoingOrder", "Outgoing\FuncOutgoingOrder.csproj", "{567F3727-42FF-4434-B817-C46C26BB3A75}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QTSendOrder", "Outgoing\QTSendOrder.csproj", "{567F3727-42FF-4434-B817-C46C26BB3A75}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FuncScheduleOrder", "WorkCenterScheduling\FuncScheduleOrder.csproj", "{ED18E857-7902-4005-8FE9-4901D0DD6A9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FuncAdminEmail", "FuncAdminEmail\FuncAdminEmail.csproj", "{140C2B48-BAD3-48C6-AB4E-EC1560FB7899}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TTCheckForNeedOfVendorOrder", "FunctionApp1\TTCheckForNeedOfVendorOrder.csproj", "{7CBFC03A-05B8-4347-9012-3EBC92FB9A3D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QTAdjInventory", "FuncAdjustInventory\QTAdjInventory.csproj", "{B5E381A3-01BB-48E4-B9E6-9A4E607D7326}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HTCheckforVendorOrderResponse", "FuncCheckforVendorOrderResponse\HTCheckforVendorOrderResponse.csproj", "{74668011-17B2-4DD4-A04D-B83115C10460}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HTGetResponsesToOrders", "funcGetResponsesToOrders\HTGetResponsesToOrders.csproj", "{ABCD3D61-D026-4FA1-879C-79524A82FA8E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,10 +55,26 @@ Global
 		{567F3727-42FF-4434-B817-C46C26BB3A75}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{567F3727-42FF-4434-B817-C46C26BB3A75}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{567F3727-42FF-4434-B817-C46C26BB3A75}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ED18E857-7902-4005-8FE9-4901D0DD6A9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ED18E857-7902-4005-8FE9-4901D0DD6A9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ED18E857-7902-4005-8FE9-4901D0DD6A9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ED18E857-7902-4005-8FE9-4901D0DD6A9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{140C2B48-BAD3-48C6-AB4E-EC1560FB7899}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{140C2B48-BAD3-48C6-AB4E-EC1560FB7899}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{140C2B48-BAD3-48C6-AB4E-EC1560FB7899}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{140C2B48-BAD3-48C6-AB4E-EC1560FB7899}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7CBFC03A-05B8-4347-9012-3EBC92FB9A3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CBFC03A-05B8-4347-9012-3EBC92FB9A3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CBFC03A-05B8-4347-9012-3EBC92FB9A3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CBFC03A-05B8-4347-9012-3EBC92FB9A3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5E381A3-01BB-48E4-B9E6-9A4E607D7326}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5E381A3-01BB-48E4-B9E6-9A4E607D7326}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5E381A3-01BB-48E4-B9E6-9A4E607D7326}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5E381A3-01BB-48E4-B9E6-9A4E607D7326}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74668011-17B2-4DD4-A04D-B83115C10460}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74668011-17B2-4DD4-A04D-B83115C10460}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74668011-17B2-4DD4-A04D-B83115C10460}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74668011-17B2-4DD4-A04D-B83115C10460}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABCD3D61-D026-4FA1-879C-79524A82FA8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABCD3D61-D026-4FA1-879C-79524A82FA8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABCD3D61-D026-4FA1-879C-79524A82FA8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABCD3D61-D026-4FA1-879C-79524A82FA8E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

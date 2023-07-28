@@ -1,21 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Azure.Storage.Queues;
 
 namespace CosmosDB
 {
-    internal class AzureQueue : Interfaces.IQueueService
+    public class AzureQueue : Interfaces.IQueueService
     {
-        public AzureQueue() 
+        static QueueClient _client = null;
+
+        public AzureQueue(string Connection, string QueueName) 
         {
-            
+            _client = new QueueClient(Connection, QueueName);
         }
 
         public void SendToService(IBase Item)
         {
-            throw new NotImplementedException();
+            _client.SendMessage(System.Text.Json.JsonSerializer.Serialize(Item));
         }
     }
 }

@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using Microsoft.Extensions.Azure;
+using Azure.Storage.Queues;
+using Azure.Storage.Blobs;
+using Azure.Core.Extensions;
 
 namespace VendorTest
 {

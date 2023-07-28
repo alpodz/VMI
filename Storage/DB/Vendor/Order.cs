@@ -1,13 +1,5 @@
-﻿using Core;
-using DB.Vendor;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Serialization;
+﻿using System;
 using DB.Admin;
-using System.Collections.Concurrent;
-using Core.Core.API;
 
 namespace DB.Vendor
 {
@@ -40,8 +32,8 @@ namespace DB.Vendor
             get => dateOrdered; 
             set {
                 if (dateOrdered.GetValueOrDefault(DateTime.MinValue) == value.GetValueOrDefault(DateTime.MinValue)) return;
-                dateOrdered = value;                
-                if (value != null) OrderAPI.SendOrder(this); 
+                dateOrdered = value;     
+                if (value != null) _SendOrderService.SendToService(this); 
             } 
         }
         [Label("Date Scheduled")]
@@ -54,7 +46,7 @@ namespace DB.Vendor
             set {
                 if (dateCompleted.GetValueOrDefault(DateTime.MinValue) == value.GetValueOrDefault(DateTime.MinValue)) return;               
                 dateCompleted = value;                
-                if (value != null) OrderAPI.AdjustInventory(this);
+                if (value != null) _AdjInventoryService.SendToService(this);
             } 
         }
         //[ReadOnly]
@@ -87,6 +79,7 @@ namespace DB.Vendor
         private DateTime? dateOrdered;
         private DateTime? dateCompleted;
 
+     
         #endregion
     }
 }

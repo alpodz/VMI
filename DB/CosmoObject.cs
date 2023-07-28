@@ -1,23 +1,8 @@
-﻿using DB.Vendor;
-using Interfaces;
+﻿using Interfaces;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Cosmos.Core;
-using Microsoft.Azure.Cosmos.Fluent;
-using Microsoft.Azure.Cosmos.Serialization.HybridRow;
-using Microsoft.Azure.Cosmos.Spatial;
-using Microsoft.Extensions.Configuration;
-using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Drawing.Imaging;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 
 namespace CosmosDB
 {
@@ -44,7 +29,7 @@ namespace CosmosDB
             await _db.DeleteAsync();
             _db = await _client.CreateDatabaseIfNotExistsAsync("VMI");
             if (_db == null || ContainerName == null || PartitionKey == null) return;
-            _container = await _db.CreateContainerIfNotExistsAsync(ContainerName, "/" + PartitionKey, 1000);
+            _container = await _db.CreateContainerIfNotExistsAsync(ContainerName, "/" + PartitionKey);
         }
 
         string IDBObject.Name { get; set; }
@@ -73,7 +58,7 @@ namespace CosmosDB
                     var result = (IList) JsonConvert.DeserializeObject(_documents.ToString(), listType);
                     if (colListType.Count == 0) colListType = result;
                     else
-                        foreach ( var item in result)
+                        foreach (Base item in result)                           
                             colListType.Add(item);
                 }
             }
