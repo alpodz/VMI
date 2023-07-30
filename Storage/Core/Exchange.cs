@@ -81,7 +81,7 @@ namespace Core
 
         #region Exchange
 
-        public Exchange(ref Dictionary<Type, Dictionary<String, Base>> cache)
+        public Exchange(ref Dictionary<Type, Dictionary<String, Base>> cache, out bool success)
         {
             Cache = cache;
             for (int loc = 0; loc < RequiredKeys.Count(); loc++)            
@@ -93,13 +93,14 @@ namespace Core
                 }
                 else
                 {
-                    SystemMessage += item.Name + "is missing from Configuration. <BR>";
+                    SystemMessage += RequiredKeys[loc] + "is missing from Configuration. <BR>";
+                    success = false;
                     return;
                 }
             }
 
             Client = new S22.Imap.ImapClient(RequiredValues[imap], 993, RequiredValues[user], RequiredValues[pass], S22.Imap.AuthMethod.Login, true);
-
+            success = Client != null;
             return;
         }
 
@@ -167,50 +168,58 @@ namespace Core
 
         #endregion
 
-        //private static System.Timers.Timer myTimer;
-        //private static Core.Exchange email;
+        private static System.Timers.Timer myTimer;
+        private static Exchange email;
+        private static Interfaces.IDBObject dBLocation;
+        private static Dictionary<Type, Dictionary<String, Base>> MainDBCollections;
 
-        //public static void SetTimer(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, Base>> Collections)
-        //{
-        //    myTimer = new Timer(10000);
-        //    myTimer.Elapsed += OnTimedEvent;
-        //    myTimer.AutoReset = true;
-        //    myTimer.Enabled = true;
-        //}
+        public static void SetTimer(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, Base>> Collections)
+        {
+            dBLocation = DBLocation;
+            MainDBCollections = Collections;
+            myTimer = new Timer(10000);
+            myTimer.Elapsed += OnTimedEvent;
+            myTimer.AutoReset = true;
+            myTimer.Enabled = true;
+        }
 
-        //private static void OnTimedEvent(Object source, ElapsedEventArgs e)
-        //{
-        //    // Stops the Timer so that 'work can be done' and keep the 10 second delay between actions
-        //    myTimer.Stop();
-        //    // prep the object
-        //    var mine = new Core.Inventory(DBLocation, ref MainDBCollections);
-        //    // if there is already a email client setup, remove the event handler
-        //    if (email != null)
-        //        email.Client.NewMessage -= mine.Client_NewMessage;
-        //    try
-        //    {
-        //        // first time establishment
-        //        if (email == null || email.Client == null) email = new Core.Exchange(ref MainDBCollections);
-        //        // attempt search, if fails, we'll reestablish
-        //        var msgs = email.Client.Search(S22.Imap.SearchCondition.All());
-        //    }
-        //    catch
-        //    {
-        //        // if there is no email client / or it fails to do a search // reestablish email client
-        //        email = new Core.Exchange(ref MainDBCollections);
-        //        try
-        //        {
-        //            // set up auto notify
-        //            if (email.Client.Supports("IDLE"))
-        //                email.Client.NewMessage += mine.Client_NewMessage;
-        //        }
-        //        catch
-        //        {
+        private static void OnTimedEvent(Object source, ElapsedEventArgs e)
+        {
+            // Stops the Timer so that 'work can be done' and keep the 10 second delay between actions
+            myTimer.Stop();
+            // prep the object
+            var mine = new Inventory(dBLocation, ref MainDBCollections);
+            // if there is already a email client setup, remove the event handler
+            if (email != null && email.Client != null)
+                email.Client.NewMessage -= mine.Client_NewMessage;
+            try
+            {
+                // first time establishment
+                bool success = true;
+                if (email == null || email.Client == null) email = new Exchange(ref MainDBCollections, out success);
+                if (!success) return;
+                // attempt search, if fails, we'll reestablish
+                var msgs = email.Client.Search(S22.Imap.SearchCondition.All());
+            }
+            catch
+            {
+                // if there is no email client / or it fails to do a search // reestablish email client
+                email = new Exchange(ref MainDBCollections, out var success);
+                if (!success) return;
+                try
+                {
+                    // set up auto notify
+                    if (email != null && email.Client != null)
+                    if (email.Client.Supports("IDLE"))
+                        email.Client.NewMessage += mine.Client_NewMessage;
+                }
+                catch
+                {
 
-        //        }
-        //    }
-        //    mine.ExecuteMaint(email);
-        //    myTimer.Start();
-        //}
+                }
+            }
+            mine.ExecuteMaint(email);
+            myTimer.Start();
+        }
     }
 }

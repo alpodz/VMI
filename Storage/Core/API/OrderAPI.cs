@@ -43,7 +43,8 @@ namespace Core.Core.API
                 exchangedOrders.RequiredBy = requiredby;
                 if (Order.DateScheduled.HasValue) exchangedOrders.RequiredBy = Order.DateScheduled.Value;
 
-                var mail = new Exchange(ref MainDBCollections);
+                var mail = new Exchange(ref MainDBCollections,out var success);
+                if (!success) return;
                 mail.SendAuto(Exchange.EnuSendAuto.SendVendorOrder, exchangedOrders);
             }
         }

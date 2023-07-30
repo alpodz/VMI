@@ -6,21 +6,21 @@
 @if (Request.HasFormContentType)
 {
     // Save Form
-    IndexModel.HandleFormCollection(Request.Form);
+    WebHost.HandleFormCollection(Request.Form);
     // Reload Collection
     Program.MainDBCollections = (Dictionary<Type, Dictionary<String, Base>>)Base.PopulateMainCollection(Program.DBLocation);
 }
 @{
-    Base[] rows = IndexModel.GetRows(Request);
+    Base[] rows = WebHost.GetRows(Request);
     if (rows == null) return;
-    ViewData["Title"] = IndexModel.CurrentType.Name;
+    ViewData["Title"] = WebHost.CurrentType.Name;
 }
 <form method="POST" name="_Save">
     <div class="container">
         <div class="row justify-content-md-center">
             <div class="col-md-1 readonly"></div>
             @{
-                foreach (var prop in IndexModel.CurrentTypeProperties)
+                foreach (var prop in WebHost.CurrentTypeProperties)
                 {
                     if (IndexModel.IsPrimaryKey(prop)) continue;
                     if (IndexModel.PropertyNotVisible(prop)) continue;
@@ -35,7 +35,7 @@
                 ((IBase)row).PopulateDerivedFields(Program.DBLocation, ref Program.MainDBCollections);
                 String primaryValue = row.GetPrimaryKeyValue();
                 <div class="row justify-content-md-center">
-                    @foreach (var prop in IndexModel.CurrentTypeProperties)
+                    @foreach (var prop in WebHost.CurrentTypeProperties)
                     {
                         var width = Base.GetDisplayProperty(prop, typeof(Base.DisplayWidth), "20");
                         if (width == "0") continue;
@@ -49,7 +49,7 @@
                                 propValue = ((DateTime?)prop.GetValue(row)).Value.ToString("yyyy-MM-dd");
                         }
 
-                        if (IndexModel.CurrentTypePrimaryKey == prop.Name)
+                        if (WebHost.CurrentTypePrimaryKey == prop.Name)
                         {
                             <div class="col-md-1 readonly">
                                 <input type="hidden" name="type" value="@row.GetType().ToString()" />
@@ -111,7 +111,7 @@
                     }
                 </div>
 
-                var tables = IndexModel.ReferencedTables(IndexModel.CurrentType);
+                var tables = IndexModel.ReferencedTables(WebHost.CurrentType);
                     if (tables.Count > 0)
                     {
                         <div class="row justify-content-md-center">
@@ -130,7 +130,7 @@
 
             }
         }
-        <input type="hidden" name="_Add_Type" value="@IndexModel.CurrentType.FullName.ToString()" />
+        <input type="hidden" name="_Add_Type" value="@WebHost.CurrentType.FullName.ToString()" />
     <button name="_Add" value="Add"><img src="~/images/plus.png" width="20" height="20" /></button>
     <button name="_Save" value="Save"><img src="~/images/pngfind.com-save-icon-png-2201567.png" width="20" height="20" /></button>
     <button name="_Previous_0" value="Previous"><img src="~/images/sort-left.png" width="20" height="20" /></button>

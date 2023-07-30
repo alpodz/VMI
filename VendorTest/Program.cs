@@ -44,7 +44,7 @@ namespace VendorTest
             MainDBCollections = Base.PopulateMainCollection(DBLocation);
             WorkCenterPartAPI.DBCollection = MainDBCollections;
             OrderAPI.MainDBCollections = MainDBCollections;
-            //Exchange.SetTimer();
+            Exchange.SetTimer(DBLocation, ref MainDBCollections);
         }
                
     }
