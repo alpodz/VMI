@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Interfaces", "Interfaces\In
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SMTPEmailClient", "SMTPEmailClient\SMTPEmailClient.csproj", "{91CB3D70-8AA7-40D9-8189-21A60355E667}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GMailClient", "GMailClient\GMailClient.csproj", "{5DE0604B-CA14-407F-97A7-F44FFCEEAD67}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QTOutgoingGMail", "QTOutgoingEmailProcessor\QTOutgoingGMail.csproj", "{6BD9A3B7-DAA3-4E35-97A5-B7BD3D609BC6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,10 +41,10 @@ Global
 		{91CB3D70-8AA7-40D9-8189-21A60355E667}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91CB3D70-8AA7-40D9-8189-21A60355E667}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91CB3D70-8AA7-40D9-8189-21A60355E667}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5DE0604B-CA14-407F-97A7-F44FFCEEAD67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5DE0604B-CA14-407F-97A7-F44FFCEEAD67}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5DE0604B-CA14-407F-97A7-F44FFCEEAD67}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5DE0604B-CA14-407F-97A7-F44FFCEEAD67}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6BD9A3B7-DAA3-4E35-97A5-B7BD3D609BC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BD9A3B7-DAA3-4E35-97A5-B7BD3D609BC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BD9A3B7-DAA3-4E35-97A5-B7BD3D609BC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BD9A3B7-DAA3-4E35-97A5-B7BD3D609BC6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace VendorTest
+namespace Core.Core.API
 {
 
     public class OrderAPI
@@ -47,9 +47,9 @@ namespace VendorTest
                 exchangedOrders.RequiredBy = requiredby;
                 if (Order.DateScheduled.HasValue) exchangedOrders.RequiredBy = Order.DateScheduled.Value;
 
-                var mail = new Exchange(Inventory, MailClient, ref MainDBCollections, out var success);
-                if (!success) return;
-                mail.SendAuto(EnuSendAuto.SendVendorOrder, exchangedOrders);
+                //var mail = new Exchange(Inventory, MailClient, ref MainDBCollections, out var success);
+                // if (!success) return;
+                // mail.SendAuto(EnuSendAuto.SendVendorOrder, exchangedOrders);
             }
         }
 

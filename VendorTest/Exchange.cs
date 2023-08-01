@@ -132,7 +132,7 @@ namespace VendorTest
             // prep the object
             ConfigHelper = new ConfigHelper(MainDBCollections[typeof(Configuration)]);
             IInventory mine = new Inventory(dBLocation, ref MainDBCollections);
-            IMailClient mailClient = new SMTPEmailClient.SMTPEmailClient().GetMailClient(ConfigHelper, mine);
+            IMailClient mailClient = new SMTPEmailClient().GetMailClient(ConfigHelper, mine);
 
             bool success = true;
             if (email == null || email.Client == null) email = new Exchange(mine, mailClient, ref MainDBCollections, out success);
