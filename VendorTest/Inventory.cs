@@ -17,8 +17,7 @@ namespace VendorTest
         private readonly IDBObject DBLocation;
         private Dictionary<Type, Dictionary<string, Base>> MainDBCollections;
         private static readonly object EmaiLLock = new object();
-        private static IExchange email;
-        private static Exchange _Exchange;
+        private static Exchange email;
 
         public Inventory(IDBObject dBLocation, ref Dictionary<Type, Dictionary<string, Base>> mainDBCollections)
         {
@@ -28,7 +27,7 @@ namespace VendorTest
 
         public void ExecuteMaint(IExchange _email)
         {
-            _Exchange = _email;
+            email = (Exchange) _email;
             CheckForNeedOfVendorOrder();
 
             if (email.Client == null) return;
@@ -187,13 +186,13 @@ namespace VendorTest
 
         }
 
-        private bool CheckForVendorOrderResponse(string OrderedOrderID)
+        private bool CheckForVendorOrderResponse(ExchangedOrders response)
         {
-            if (OrderedOrderID == null) return false;
+            if (response == null) return false;
             // let's make sure it's a real order
             Order ord = null;
-            if (MainDBCollections[typeof(Order)].ContainsKey(OrderedOrderID))
-                ord = (Order)MainDBCollections[typeof(Order)][OrderedOrderID];
+            if (MainDBCollections[typeof(Order)].ContainsKey(response.OrderedOrderID))
+                ord = (Order)MainDBCollections[typeof(Order)][response.OrderedOrderID];
             if (ord != null)
             {
                 // place order // update to address to vendor

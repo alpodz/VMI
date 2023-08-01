@@ -1,6 +1,7 @@
 ﻿using Core;
 using DB.Admin;
 using DB.Vendor;
+using Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,8 @@ namespace VendorTest
 
     public class OrderAPI
     {
+        public static IInventory Inventory { get; set; }
+        public static IMailClient MailClient { get; set; }
         public static Dictionary<Type, Dictionary<string, Base>> MainDBCollections;
 
         public static void SendOrder(Order Order)
@@ -44,7 +47,7 @@ namespace VendorTest
                 exchangedOrders.RequiredBy = requiredby;
                 if (Order.DateScheduled.HasValue) exchangedOrders.RequiredBy = Order.DateScheduled.Value;
 
-                var mail = new Exchange(ref MainDBCollections, out var success);
+                var mail = new Exchange(Inventory, MailClient, ref MainDBCollections, out var success);
                 if (!success) return;
                 mail.SendAuto(EnuSendAuto.SendVendorOrder, exchangedOrders);
             }
