@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DB\CosmosDB.csproj" />
+    <ProjectReference Include="..\SMTPEmailClient\SMTPEmailClient.csproj" />
     <ProjectReference Include="..\Storage\Core.csproj" />
   </ItemGroup>
 

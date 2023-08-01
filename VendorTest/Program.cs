@@ -1,6 +1,7 @@
-﻿using Core;
+﻿using Core.Core;
 using Core.Core.API;
 using Core.DB;
+using DB.Admin;
 using Interfaces;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Hosting;
@@ -15,6 +16,10 @@ namespace VendorTest
 {
     public partial class Program
     {
+        public static IConfigHelper ConfigHelper { get; set; }
+        public static IMailClient MailClient { get; set; }
+
+        public static IInventory Inventory { get; set; }
 
         public static IDBObject DBLocation { get; set; }
 
@@ -36,12 +41,16 @@ namespace VendorTest
                 webBuilder.UseStartup<Startup>();
             });
 
-        public void Init(IConfiguration configfromstartup)
+        public static void Init(IConfiguration configfromstartup)
         {
             Configuration = configfromstartup;
             //DBLocation = new FileObject(Configuration["DBLocation"]);
             DBLocation = new CosmosDB.CosmoObject(Configuration["ConnectionStrings:AzureCosmos"]);
             MainDBCollections = Base.PopulateMainCollection(DBLocation);
+            Inventory = new Inventory(DBLocation, ref MainDBCollections);
+            ConfigHelper = new ConfigHelper(MainDBCollections[typeof(Configuration)]);
+            MailClient = new SMTPEmailClient.SMTPEmailClient().GetMailClient(ConfigHelper, Inventory);
+
             WorkCenterPartAPI.DBCollection = MainDBCollections;
             OrderAPI.MainDBCollections = MainDBCollections;
             Exchange.SetTimer(DBLocation, ref MainDBCollections);

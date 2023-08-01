@@ -10,12 +10,12 @@ namespace VendorTest
 {
     public class Startup
     {
-        public VendorTest.Program program = new Program();
+        //public VendorTest.Program program = new Program();
 
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-            program.Init(Configuration);
+            Program.Init(Configuration);
         }
 
         public IConfiguration Configuration { get; }
@@ -30,7 +30,7 @@ namespace VendorTest
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            services.AddRazorPages();// AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+            services.AddRazorPages();//services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
             
         }
 

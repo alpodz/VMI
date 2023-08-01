@@ -1,11 +1,12 @@
-﻿using DB.Admin;
+﻿using Core;
+using DB.Admin;
 using DB.Vendor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Core.Core.API
+namespace VendorTest
 {
 
     public class OrderAPI
@@ -15,7 +16,7 @@ namespace Core.Core.API
         public static void SendOrder(Order Order)
         {
             // only process if these items are set
-            if (MainDBCollections == null || !Order.DateOrdered.HasValue || String.IsNullOrEmpty(Order.PartID) || String.IsNullOrEmpty(Order.CustomerID) || String.IsNullOrEmpty(Order.id)) return;
+            if (MainDBCollections == null || !Order.DateOrdered.HasValue || string.IsNullOrEmpty(Order.PartID) || string.IsNullOrEmpty(Order.CustomerID) || string.IsNullOrEmpty(Order.id)) return;
 
             if (Order.VendorOrder)
             {
@@ -43,9 +44,9 @@ namespace Core.Core.API
                 exchangedOrders.RequiredBy = requiredby;
                 if (Order.DateScheduled.HasValue) exchangedOrders.RequiredBy = Order.DateScheduled.Value;
 
-                var mail = new Exchange(ref MainDBCollections,out var success);
+                var mail = new Exchange(ref MainDBCollections, out var success);
                 if (!success) return;
-                mail.SendAuto(Exchange.EnuSendAuto.SendVendorOrder, exchangedOrders);
+                mail.SendAuto(EnuSendAuto.SendVendorOrder, exchangedOrders);
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using DB;
+﻿using Core;
+using DB;
 using DB.Admin;
 using DB.Vendor;
 using Interfaces;
@@ -9,42 +10,38 @@ using System.Linq;
 using System.Net.Mail;
 using System.Threading;
 
-namespace Core
+namespace VendorTest
 {
-    public class Inventory
+    public class Inventory : IInventory
     {
         private readonly IDBObject DBLocation;
-        private Dictionary<Type, Dictionary<String, Base>> MainDBCollections;
-        private static readonly Object EmaiLLock = new Object();
-        private static Exchange email;
+        private Dictionary<Type, Dictionary<string, Base>> MainDBCollections;
+        private static readonly object EmaiLLock = new object();
+        private static IExchange email;
+        private static Exchange _Exchange;
 
-        public Inventory(IDBObject dBLocation, ref Dictionary<Type, Dictionary<String, Base>> mainDBCollections)
+        public Inventory(IDBObject dBLocation, ref Dictionary<Type, Dictionary<string, Base>> mainDBCollections)
         {
             DBLocation = dBLocation;
             MainDBCollections = mainDBCollections;
         }
 
-        public void ExecuteMaint(Exchange _email)
+        public void ExecuteMaint(IExchange _email)
         {
-            email = _email;
+            _Exchange = _email;
             CheckForNeedOfVendorOrder();
 
             if (email.Client == null) return;
             // query email server and do what you need to do:
-            foreach (var msg in email.Client.Search(S22.Imap.SearchCondition.All()))
+            foreach (var msg in email.Client.Search())
                 ExecuteWorkAgainstMailMessage(msg);
 
             EmailAdminToDoStuff();
         }
 
-        public void Client_NewMessage(object sender, S22.Imap.IdleMessageEventArgs e)
+        public void ExecuteWorkAgainstMailMessage(uint mailnum)
         {
-            ExecuteWorkAgainstMailMessage(e.MessageUID);
-        }
-
-        private void ExecuteWorkAgainstMailMessage(uint mailnum)
-        {
-            lock (Inventory.EmaiLLock)
+            lock (EmaiLLock)
             {
                 // possiblely already deleted // we'll catch the exception returning and just 'eat it'
                 using (MailMessage mail = email.Client.GetMessage(mailnum))
@@ -58,22 +55,22 @@ namespace Core
         }
 
         private void CheckEmailForVariousResponses(MailMessage mail)
-        {
+        {            
             // RequestVendorOrderResponse   In  -   Man     Re: VENDOR ORDER NEEDED -   Get Response From Admin              
             // SendVendorOrder              Out -   Auto    ORDER                   -   Send Vendor Order
-            if (CheckForVendorOrderResponse(Exchange.RetrieveMail(mail, Exchange.EnuReceiveAdmin.RequestVendorOrderResponse.ToString()))) return;
+            if (CheckForVendorOrderResponse(email.RetrieveMail(mail, EnuReceiveAdmin.RequestVendorOrderResponse.ToString()))) return;
             // ReceiveCustomerOrder         In  -   Auto    ORDER                   -   Receive Vendor Order / Customer Order
             // SendCustomerOrderResponse    Out -   Auto    Re: ORDER               -   Send Order Response
-            if (GetOrders(email, Exchange.RetrieveMail(mail, Exchange.EnuRecieveAuto.RecieveCustomerOrder.ToString()))) return;
+            if (GetOrders(email, email.RetrieveMail(mail, EnuRecieveAuto.RecieveCustomerOrder.ToString()))) return;
             // ReceiveOrderResponse         In  -   Auto    Re: ORDER               -   Receive Order Response
-            if (GetResponsesToOrders(Exchange.RetrieveMail(mail, Exchange.EnuRecieveAuto.RecieveOrderResponse.ToString()))) return;
+            if (GetResponsesToOrders(email.RetrieveMail(mail, EnuRecieveAuto.RecieveOrderResponse.ToString()))) return;
         }
 
         private void EmailAdminToDoStuff()
         {
             // only process if these items are set
             if (MainDBCollections == null) return;
-            var multipleorders = new Dictionary<Exchange.EnuSendAdmin, List<Order>>();
+            var multipleorders = new Dictionary<EnuSendAdmin, List<Order>>();
 
             // RequestVendorOrder           Out -   Man     VENDOR ORDER NEEDED     -   Ask Admin For Permission to Place Order
             // OldUnOrdered                 Out -   Man     PENDING UNORDERED       -   Pending Unordered Orders - No Order Date
@@ -85,25 +82,25 @@ namespace Core
             var Orders = MainDBCollections[typeof(Order)].Values.Cast<Order>();
             foreach (var objOrd in Orders)
             {
-                if (!objOrd.DateAdminLastNotified.HasValue || (objOrd.DateAdminLastNotified.HasValue && objOrd.DateAdminLastNotified < DateTime.Now.Date))
+                if (!objOrd.DateAdminLastNotified.HasValue || objOrd.DateAdminLastNotified.HasValue && objOrd.DateAdminLastNotified < DateTime.Now.Date)
                 {
                     if (!objOrd.DateOrdered.HasValue && !objOrd.DateScheduled.HasValue && !objOrd.DateCompleted.HasValue)
                     {
                         // OldUnOrdered -- Queue Up
-                        if (!multipleorders.ContainsKey(Exchange.EnuSendAdmin.OldUnOrdered)) multipleorders.Add(Exchange.EnuSendAdmin.OldUnOrdered, new List<Order>());
-                        multipleorders[Exchange.EnuSendAdmin.OldUnOrdered].Add(objOrd);
+                        if (!multipleorders.ContainsKey(EnuSendAdmin.OldUnOrdered)) multipleorders.Add(EnuSendAdmin.OldUnOrdered, new List<Order>());
+                        multipleorders[EnuSendAdmin.OldUnOrdered].Add(objOrd);
                     }
                     else if (objOrd.DateOrdered.HasValue && !objOrd.DateScheduled.HasValue && !objOrd.DateCompleted.HasValue)
                     {
                         // OldUnScheduled -- Queue Up
-                        if (!multipleorders.ContainsKey(Exchange.EnuSendAdmin.OldUnScheduled)) multipleorders.Add(Exchange.EnuSendAdmin.OldUnScheduled, new List<Order>());
-                        multipleorders[Exchange.EnuSendAdmin.OldUnScheduled].Add(objOrd);
+                        if (!multipleorders.ContainsKey(EnuSendAdmin.OldUnScheduled)) multipleorders.Add(EnuSendAdmin.OldUnScheduled, new List<Order>());
+                        multipleorders[EnuSendAdmin.OldUnScheduled].Add(objOrd);
                     }
                     else if (objOrd.DateOrdered.HasValue && objOrd.DateScheduled.HasValue && objOrd.DateScheduled < DateTime.Now.Date && !objOrd.DateCompleted.HasValue)
                     {
                         // OldUnCompleted -- Queue Up
-                        if (!multipleorders.ContainsKey(Exchange.EnuSendAdmin.OldUnCompleted)) multipleorders.Add(Exchange.EnuSendAdmin.OldUnCompleted, new List<Order>());
-                        multipleorders[Exchange.EnuSendAdmin.OldUnCompleted].Add(objOrd);
+                        if (!multipleorders.ContainsKey(EnuSendAdmin.OldUnCompleted)) multipleorders.Add(EnuSendAdmin.OldUnCompleted, new List<Order>());
+                        multipleorders[EnuSendAdmin.OldUnCompleted].Add(objOrd);
                     }
                 }
             }
@@ -115,14 +112,14 @@ namespace Core
                 {
                     var typeofOrder = "Customer";
                     if (order.VendorOrder) typeofOrder = "Vendor";
-                    body += $"{ typeofOrder } Order: {order.id} ";
+                    body += $"{typeofOrder} Order: {order.id} ";
 
                     switch (queue.Key)
                     {
-                        case Exchange.EnuSendAdmin.OldUnCompleted:
-                            body += $" was scheduled to arrive or be completed for { order.DateScheduled } but has not been marked completed.";
+                        case EnuSendAdmin.OldUnCompleted:
+                            body += $" was scheduled to arrive or be completed for {order.DateScheduled} but has not been marked completed.";
                             break;
-                        case Exchange.EnuSendAdmin.OldUnScheduled:
+                        case EnuSendAdmin.OldUnScheduled:
                             body += $" has failed to be ordered and/or scheduled.";
                             break;
                         default:
@@ -130,7 +127,7 @@ namespace Core
                             break;
                     }
 
-                    if (!String.IsNullOrWhiteSpace(order.Message)) body += $" Message: {order.Message}";
+                    if (!string.IsNullOrWhiteSpace(order.Message)) body += $" Message: {order.Message}";
                     body += "<BR>";
 
                     order.DateAdminLastNotified = DateTime.Now.Date;
@@ -153,7 +150,7 @@ namespace Core
             {
                 if (objPart.AssignedVendorPart == null) return;
                 if (objPart.PullQuantity == 0) return;
-                if (objPart.PullQuantity < (objPart.InStock + objPart.OrderedAmt)) return;
+                if (objPart.PullQuantity < objPart.InStock + objPart.OrderedAmt) return;
                 // check existing orders
                 if (MainDBCollections[typeof(Order)].Values.Cast<Order>().FirstOrDefault(a => a.PartID == objPart.id && a.VendorOrder == true && !a.DateOrdered.HasValue) != null) return;
 
@@ -181,22 +178,22 @@ namespace Core
                 objOrder.DateAdminLastNotified = DateTime.Now.Date;
                 Base.SaveCollection(DBLocation, typeof(Order), MainDBCollections[typeof(Order)]);
 
-                var body = $"{objOrder.Message} {objOrder.VendorPartName} with a Quantity of: {objOrder.TotalAmountOrdered} and is needed by: {objOrder.RequiredBy.GetValueOrDefault(DateTime.MinValue) }";
+                var body = $"{objOrder.Message} {objOrder.VendorPartName} with a Quantity of: {objOrder.TotalAmountOrdered} and is needed by: {objOrder.RequiredBy.GetValueOrDefault(DateTime.MinValue)}";
                 if (objPart.DateRequiredBy.GetValueOrDefault(DateTime.MinValue) < DateTime.Now.Date) body += " WARNING: The Date Required is in the Past, we will request the current date plus lead time";
-                body += $"<BR><BR>Reply to this Email to Proceed. (Subject must be: {Exchange.SetSubject(Exchange.EnuReceiveAdmin.RequestVendorOrderResponse.ToString())}).";
+                body += $"<BR><BR>Reply to this Email to Proceed. (Subject must be: {email.SetSubject(EnuReceiveAdmin.RequestVendorOrderResponse.ToString())}).";
 
-                email.SendAdmin(Exchange.EnuSendAdmin.RequestVendorOrder, objOrder.id, body);
+                email.SendAdmin(EnuSendAdmin.RequestVendorOrder, objOrder.id, body);
             }
 
         }
 
-        private bool CheckForVendorOrderResponse(ExchangedOrders response)
+        private bool CheckForVendorOrderResponse(string OrderedOrderID)
         {
-            if (response == null) return false;
+            if (OrderedOrderID == null) return false;
             // let's make sure it's a real order
             Order ord = null;
-            if (MainDBCollections[typeof(Order)].ContainsKey(response.OrderedOrderID))
-                ord = (Order)MainDBCollections[typeof(Order)][response.OrderedOrderID];
+            if (MainDBCollections[typeof(Order)].ContainsKey(OrderedOrderID))
+                ord = (Order)MainDBCollections[typeof(Order)][OrderedOrderID];
             if (ord != null)
             {
                 // place order // update to address to vendor
@@ -272,9 +269,9 @@ namespace Core
                 Base.SaveCollection(DBLocation, typeof(Order), MainDBCollections[typeof(Order)]);
             }
             request.body = "Order Response";
-            mail.SendAuto(Exchange.EnuSendAuto.SendCustomerOrderResponse, request);
+            mail.SendAuto(EnuSendAuto.SendCustomerOrderResponse, request);
             return true;
         }
-               
+
     }
 }
