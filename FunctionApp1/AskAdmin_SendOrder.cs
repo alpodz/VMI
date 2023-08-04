@@ -1,15 +1,21 @@
-using System;
-using System.Linq;
+using Core;
+using CosmosDB;
+using DB.Admin;
 using DB.Vendor;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Queue;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace TTCheckForNeedOfVendorOrder;
-public class TTCheckForNeedOfVendorOrder
+namespace TTAutomatedUsageCheck_AskAdmin_SendOrder;
+public class AskAdmin_SendOrder
 {
-    [FunctionName("TTCheckForNeedOfVendorOrder")]
-    public void Run([TimerTrigger("*/15 * * * * *")] TimerInfo myTimer, ILogger log, ExecutionContext context)
+    [FunctionName(nameof(ExchangedOrders.OutgoingMessageType.AskAdmin_SendOrder))]
+    public static async Task Run([TimerTrigger("*/15 * * * * *")] TimerInfo myTimer, ILogger log, ExecutionContext context, CloudStorageAccount account)
     {
         log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
 
@@ -22,6 +28,8 @@ public class TTCheckForNeedOfVendorOrder
         string myappsettingsValue = configurationBuilder["ConnectionStrings:CosmosDB"];
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
         var MainDBCollections = Base.PopulateMainCollection(DBLocation);
+        var Configs = MainDBCollections[typeof(Configuration)];
+        Configuration AdminEmail = (Configuration)Configs["AdminEmail"];
 
         // only process if these items are set
         if (MainDBCollections == null) return;
@@ -55,20 +63,34 @@ public class TTCheckForNeedOfVendorOrder
                 Message = $"Order Required!",
                 RequiredBy = requiredby,
                 VendorPartName = objPart.AssignedVendorPart.VendorPartName,
-                WorkcenterID = "0"
+                WorkcenterID = "0",
+                IsDirty = true,                
             };
-            // Puts it in the Grid
-            MainDBCollections[typeof(Order)].Add(guid, objOrder);
-            objOrder.DateAdminLastNotified = DateTime.Now.Date;
-            Base.SaveCollection(DBLocation, typeof(Order), MainDBCollections[typeof(Order)]);
-
-            var body = $"{objOrder.Message} {objOrder.VendorPartName} with a Quantity of: {objOrder.TotalAmountOrdered} and is needed by: {objOrder.RequiredBy.GetValueOrDefault(DateTime.MinValue)}";
-            if (objPart.DateRequiredBy.GetValueOrDefault(DateTime.MinValue) < DateTime.Now.Date) body += " WARNING: The Date Required is in the Past, we will request the current date plus lead time";
-            //body += $"<BR><BR>Reply to this Email to Proceed. (Subject must be: {Exchange.SetSubject(Exchange.EnuReceiveAdmin.RequestVendorOrderResponse.ToString())}).";
-
-            //email.SendAdmin(Exchange.EnuSendAdmin.RequestVendorOrder, objOrder.id, body);
+            await SendAdmin(account, DBLocation, objPart, objOrder, AdminEmail.Value);
         }
+    }
 
+    private static async Task SendAdmin(CloudStorageAccount account, CosmoObject DBLocation, Part objPart, Order objOrder, String AdminEmail)
+    {
+        // Puts it in the Grid
+        objOrder.DateAdminLastNotified = DateTime.Now.Date;
+        DBLocation.SaveCollection(typeof(Order), new[] { objOrder });
 
+        var body = $"{objOrder.Message} {objOrder.VendorPartName} with a Quantity of: {objOrder.TotalAmountOrdered} and is needed by: {objOrder.RequiredBy.GetValueOrDefault(DateTime.MinValue)}";
+        if (objPart.DateRequiredBy.GetValueOrDefault(DateTime.MinValue) < DateTime.Now.Date) body += " WARNING: The Date Required is in the Past, we will request the current date plus lead time";
+        body += $"<BR><BR>Reply to this Email to Proceed. (Subject must be: 'Re: VENDOR ORDER NEEDED:')).";
+
+        // Purposes of Emailing (for easy splitting)
+        string ToAddress = AdminEmail;
+        string Subject = ExchangedOrders.SetSubject(ExchangedOrders.OutgoingMessageType.AskAdmin_SendOrder) + objOrder.id;
+        string Body = body;
+
+        string OutgoingQueueMessage = $"{ToAddress}||{Subject}||{Body}";
+
+        var client = account.CreateCloudQueueClient();
+        var queue = client.GetQueueReference("sendadmin");
+        await queue.CreateIfNotExistsAsync();
+        var message = new CloudQueueMessage(OutgoingQueueMessage);
+        await queue.AddMessageAsync(message);
     }
 }

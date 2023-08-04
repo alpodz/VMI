@@ -1,55 +1,24 @@
 ﻿using DB.Vendor;
-using Interfaces;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Core;
 
-namespace HTGetOrders;
-public class HTGetOrders
+namespace Auto_GetCustomerOrder;
+public class auto_getcustomerorder
 {
-    private IDBObject DBLocation;
-    private Dictionary<Type, Dictionary<string, IBase>> MainDBCollections;
-
-    [FunctionName("HTGetOrders")]
-    public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-        ILogger log)
+    [FunctionName(nameof(auto_getcustomerorder))]
+    public static void Run([QueueTrigger(nameof(auto_getcustomerorder))] ExchangedOrders request, ILogger log, ExecutionContext context,[Queue("auto_sendcustomerorderresponse")] ICollector<ExchangedOrders> outqueue)
     {
-        log.LogInformation("C# HTTP trigger function processed a request.");
-
-        string name = req.Query["name"];
-
-        string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-        dynamic data = JsonConvert.DeserializeObject(requestBody);
-        name = name ?? data?.name;
-
-        GetOrders(null);
-
-        string responseMessage = string.IsNullOrEmpty(name)
-            ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-            : $"Hello, {name}. This HTTP triggered function executed successfully.";
-
-        return new OkObjectResult(responseMessage);
-    }
-
-    private bool GetOrders(ExchangedOrders request)
-    {
-        if (request == null) return false;
+        if (request == null) return;
         var myappsettingsValue = Environment.GetEnvironmentVariable("ConnectionStrings:CosmosDB");
-        DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
-        MainDBCollections = Base.PopulateMainCollection(DBLocation);
+        var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
+        var DB = Base.PopulateMainCollection(DBLocation);
 
         // make/schedule orders
-        CheckFulfillment(request);
+        CheckFulfillment(request, DB);
 
         // save the incoming order with a new order id, however save the customer order id
         foreach (var order in request.orders)
@@ -58,15 +27,17 @@ public class HTGetOrders
             order.TotalAmountOrdered = request.OrderedPartTotal;
             order.CustomerOrderID = order.id;
             order.id = Guid.NewGuid().ToString();
-            MainDBCollections[typeof(Order)].Add(order.id, order);
-            Base.SaveCollection(DBLocation, typeof(Order), MainDBCollections[typeof(Order)]);
+            var Orders = new Dictionary<string, IBase>
+            {
+                { order.id, order }
+            };
+            Base.SaveCollection(DBLocation, typeof(Order), Orders);
         }
-        //request.body = "Order Response";
-        //mail.SendAuto(Exchange.EnuSendAuto.SendCustomerOrderResponse, request);
-        return true;
+        outqueue.Add(request);
     }
 
-    public bool CheckFulfillment(ExchangedOrders request)
+
+    public static bool CheckFulfillment(ExchangedOrders request, Dictionary<Type, Dictionary<string, IBase>> DB)
     {
         request.orders.Clear();
         // create the incoming order 
@@ -74,18 +45,19 @@ public class HTGetOrders
         { id = request.OrderedOrderID, VendorOrder = false, TotalAmountOrdered = request.OrderedPartTotal, DateOrdered = DateTime.Now.Date, Message = string.Empty, RequiredBy = request.RequiredBy };
         try
         {
-            if (!CheckUserName(request.from, out var Customer))
+            var customer = DB[typeof(Customer)].Cast<Customer>().FirstOrDefault(a => a.EmailAddress == request.from);
+            if (customer == null)
                 incomingOrder.Message += $"Unregistered User for email: {request.from} |";
             else
-                incomingOrder.CustomerID = Customer.id;
+                incomingOrder.CustomerID = customer.id;
 
-            Part PartID = MainDBCollections[typeof(Part)].Values.Cast<Part>().FirstOrDefault(a => a.Name == request.OrderedPartName);
+            Part PartID = DB[typeof(Part)].Cast<Part>().FirstOrDefault(a => a.Name == request.OrderedPartName);
             if (PartID == null)
                 incomingOrder.Message += $"Part {request.OrderedPartName} does not exist. |";
             else
                 incomingOrder.PartID = PartID.id;
 
-            var workcenters = MainDBCollections[typeof(WorkcenterPart)].Values.Cast<WorkcenterPart>().Where(a => a.PartID == PartID.id).OrderBy(a => a.PriorityLevel).ToList();
+            var workcenters = DB[typeof(WorkcenterPart)].Cast<WorkcenterPart>().Where(a => a.PartID == PartID.id).OrderBy(a => a.PriorityLevel).ToList();
             if (workcenters.Count == 0)
                 incomingOrder.Message += $"No Workcenters Setup for Part {request.OrderedPartName} |";
 
@@ -112,11 +84,11 @@ public class HTGetOrders
 
                 foreach (var rwWorkCenter in workcenters)
                 {
-                    var outgoingOrder = WorkCenterScheduling.WorkCenterScheduling.SchedulePartOnWorkCenter(ref MainDBCollections, ShipmentNumber, PartsInShipment, BeginDateOfProduction, EndDateOfProduction, rwWorkCenter);
+                    var outgoingOrder = WorkCenterScheduling.SchedulePartOnWorkCenter(ref DB, ShipmentNumber, PartsInShipment, BeginDateOfProduction, EndDateOfProduction, rwWorkCenter);
                     if (outgoingOrder != null)
                     {
                         PartsLeftToShip -= PartsInShipment;
-                        outgoingOrder.CustomerID = Customer.id;
+                        outgoingOrder.CustomerID = customer.id;
                         outgoingOrder.RequiredBy = request.RequiredBy;
                         request.orders.Add(outgoingOrder);
                     }
@@ -142,13 +114,4 @@ public class HTGetOrders
         request.orders.Add(incomingOrder);
         return false;
     }
-
-
-    private bool CheckUserName(string strUserName, out Customer customer)
-    {
-        customer = MainDBCollections[typeof(Customer)].Values.Cast<Customer>()
-           .FirstOrDefault(a => a.EmailAddress == strUserName);
-        return customer != null;
-    }
-
 }

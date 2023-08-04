@@ -1,15 +1,9 @@
-﻿using Core.Core.API;
-using Core.DB;
-using Interfaces;
+﻿using Interfaces;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Xml;
 
 public class Base : IBase
 {
@@ -224,6 +218,11 @@ public class Base : IBase
         return instance;
     }
 
+    public static Dictionary<String, IBase> PopulateDictionary(IDBObject DBLocation, Type item)
+    {
+        return PopulateTypeCollection(DBLocation, item).Cast<IBase>().ToDictionary(a => a.GetPrimaryKeyValue());
+    }
+
     public static Dictionary<Type, Dictionary<String, IBase>> PopulateMainCollection(IDBObject DBLocation)
     {
         var DBClassObjects = Assembly.Load("Core").GetTypes().Where(t => t.IsSubclassOf(typeof(Base)));
@@ -231,7 +230,7 @@ public class Base : IBase
 
         foreach (Type item in DBClassObjects)
         {
-            MainDBCollections.Add(item, PopulateTypeCollection(DBLocation, item).Cast<IBase>().ToDictionary(a => a.GetPrimaryKeyValue()));
+            MainDBCollections.Add(item, PopulateDictionary(DBLocation, item));
             // for some collections, I want to include 'None option'            
             if (item == typeof(DB.Admin.Workcenter) && !MainDBCollections[typeof(DB.Admin.Workcenter)].ContainsKey("0"))
             {

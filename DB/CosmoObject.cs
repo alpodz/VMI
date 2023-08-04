@@ -46,6 +46,7 @@ namespace CosmosDB
         private async Task<IList> PopulationCollectionAsync(Type colType, Type listType, IList colListType)
         {
             var query = new QueryDefinition($"SELECT * FROM _{ContainerName} c WHERE c.Partition LIKE '_{colType.Name}_%'");
+            if (_container == null) return colListType;
             using (FeedIterator iter = this._container.GetItemQueryStreamIterator(query))
             {
                 while (iter.HasMoreResults)
@@ -84,6 +85,7 @@ namespace CosmosDB
                 writer.Write(System.Text.Json.JsonSerializer.Serialize(item, collectionType)); 
                 writer.Flush();
                 savestream.Position = 0;
+                if (_container == null) continue;
                 var upserteditem = await _container.UpsertItemStreamAsync(savestream, new PartitionKey(item.Partition));
                 item.IsDirty = false;
             }

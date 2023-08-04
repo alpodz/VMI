@@ -1,16 +1,9 @@
-﻿using Core;
-using Core.Core.API;
-using Core.DB;
-using CosmosDB;
-using Interfaces;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
+﻿using Interfaces;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Timers;
 
 namespace VendorTest
 {
@@ -47,7 +40,7 @@ namespace VendorTest
             DBLocation = new CosmosDB.CosmoObject(Configuration["ConnectionStrings:AzureCosmos"]);
             MainDBCollections = Base.PopulateMainCollection(DBLocation);
             SendOrderService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], "Outgoing");
-            AdjInventoryService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], "Outgoing");
+            AdjInventoryService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], "adjinventory");
         }
                
     }

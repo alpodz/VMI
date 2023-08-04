@@ -1,15 +1,19 @@
 using System;
-using Core.Core.API;
+using Core;
 using DB.Vendor;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace QTSendOrder;
-public class QTSendOrder
+public class SendOrder
 {
-    [FunctionName("QTSendOrder")]
-    public static void Run([QueueTrigger("Outgoing")] Order _order, ILogger log, ExecutionContext context)
+    [FunctionName(nameof(ExchangedOrders.OutgoingMessageType.sendorder))]
+    public static void Run(
+        [QueueTrigger(nameof(ExchangedOrders.OutgoingMessageType.sendorder))] Order _order, 
+        ILogger log, 
+        ExecutionContext context, 
+        [Queue("sendauto")] ExchangedOrders outorder)
     {
         var configurationBuilder = new ConfigurationBuilder()
                 .SetBasePath(context.FunctionAppDirectory)
@@ -37,7 +41,7 @@ public class QTSendOrder
 
             _order.VendorPartName = part.AssignedVendorPart.VendorPartName;
 
-            ExchangedOrders exchangedOrders = new ExchangedOrders()
+            var OutgoingOrder = new ExchangedOrders()
             {
                 OrderedOrderID = _order.id,
                 OrderedPartName = _order.VendorPartName,
@@ -48,14 +52,9 @@ public class QTSendOrder
             var requiredby = part.DateRequiredBy.Value;
             if (requiredby < DateTime.Now.Date) requiredby = DateTime.Now.Date.AddDays(part.AssignedVendorPart.LeadDays);
 
-            exchangedOrders.RequiredBy = requiredby;
-            if (_order.DateScheduled.HasValue) exchangedOrders.RequiredBy = _order.DateScheduled.Value;
-
-
-
-
-            //                var mail = new Exchange(ref MainDBCollections);
-            //                  mail.SendAuto(Exchange.EnuSendAuto.SendVendorOrder, exchangedOrders);
+            OutgoingOrder.RequiredBy = requiredby;
+            if (_order.DateScheduled.HasValue) OutgoingOrder.RequiredBy = _order.DateScheduled.Value;
+            outorder = OutgoingOrder;
         }
     }
 }
