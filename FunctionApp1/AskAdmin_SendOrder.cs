@@ -11,10 +11,10 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace TTAutomatedUsageCheck_AskAdmin_SendOrder;
-public class AskAdmin_SendOrder
+namespace TTAskAdmin_SendOrder;
+public class askadmin_sendorder
 {
-    [FunctionName(nameof(ExchangedOrders.OutgoingMessageType.AskAdmin_SendOrder))]
+    [FunctionName(nameof(ExchangedOrders.OutgoingMessageType.askadmin_sendorder))]
     public static async Task Run([TimerTrigger("*/15 * * * * *")] TimerInfo myTimer, ILogger log, ExecutionContext context, CloudStorageAccount account)
     {
         log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
@@ -82,7 +82,7 @@ public class AskAdmin_SendOrder
 
         // Purposes of Emailing (for easy splitting)
         string ToAddress = AdminEmail;
-        string Subject = ExchangedOrders.SetSubject(ExchangedOrders.OutgoingMessageType.AskAdmin_SendOrder) + objOrder.id;
+        string Subject = ExchangedOrders.SetSubject(ExchangedOrders.OutgoingMessageType.askadmin_sendorder) + objOrder.id;
         string Body = body;
 
         string OutgoingQueueMessage = $"{ToAddress}||{Subject}||{Body}";

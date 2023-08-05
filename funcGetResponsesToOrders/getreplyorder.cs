@@ -4,11 +4,11 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
 
-namespace Auto_GetOrderResponse;
-public static class auto_getorderresponse
+namespace QTGetReplyOrder;
+public static class getreplyorder
 {
-    [FunctionName(nameof(auto_getorderresponse))]
-    public static void Run([QueueTrigger(nameof(auto_getorderresponse))] ExchangedOrders response, ILogger log, ExecutionContext context)
+    [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))]
+    public static void Run([QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))] ExchangedOrders response, ILogger log, ExecutionContext context)
     {
         if (response == null) return;
 

@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CosmosDB", "DB\CosmosDB.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Interfaces", "Interfaces\Interfaces.csproj", "{6EFA85EF-46C0-43D6-8291-780E870C8FAD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QTAuto_GetCustomerOrder", "VendorFunctions\QTAuto_GetCustomerOrder.csproj", "{F3EF0591-05E5-4523-9B46-5622B73802CF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QTGetSendOrder", "VendorFunctions\QTGetSendOrder.csproj", "{F3EF0591-05E5-4523-9B46-5622B73802CF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QTSendOrder", "Outgoing\QTSendOrder.csproj", "{567F3727-42FF-4434-B817-C46C26BB3A75}"
 EndProject
@@ -19,11 +19,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TTSendAdmin", "FuncAdminEma
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QTAdjInventory", "FuncAdjustInventory\QTAdjInventory.csproj", "{B5E381A3-01BB-48E4-B9E6-9A4E607D7326}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QTAdminResponse_SendOrder", "FuncCheckforVendorOrderResponse\QTAdminResponse_SendOrder.csproj", "{74668011-17B2-4DD4-A04D-B83115C10460}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QTGetAskAdmin_SendOrder", "FuncCheckforVendorOrderResponse\QTGetAskAdmin_SendOrder.csproj", "{74668011-17B2-4DD4-A04D-B83115C10460}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QTAuto_GetOrderResponse", "funcGetResponsesToOrders\QTAuto_GetOrderResponse.csproj", "{ABCD3D61-D026-4FA1-879C-79524A82FA8E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QTGetReplyOrder", "funcGetResponsesToOrders\QTGetReplyOrder.csproj", "{ABCD3D61-D026-4FA1-879C-79524A82FA8E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TTAutomatedUsageCheck_AskAdmin_SendOrder", "FunctionApp1\TTAutomatedUsageCheck_AskAdmin_SendOrder.csproj", "{2166EE5E-30B5-494E-912F-86358130C539}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TTAskAdmin_SendOrder", "FunctionApp1\TTAskAdmin_SendOrder.csproj", "{2166EE5E-30B5-494E-912F-86358130C539}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QTGetEmail", "RecieveEmail\QTGetEmail.csproj", "{9789882D-1861-4F35-9A9C-B8CE2A929BF9}"
 EndProject

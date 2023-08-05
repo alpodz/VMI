@@ -7,10 +7,14 @@ using System.Linq;
 using Core;
 
 namespace Auto_GetCustomerOrder;
-public class auto_getcustomerorder
+public class getsendorder
 {
-    [FunctionName(nameof(auto_getcustomerorder))]
-    public static void Run([QueueTrigger(nameof(auto_getcustomerorder))] ExchangedOrders request, ILogger log, ExecutionContext context,[Queue("auto_sendcustomerorderresponse")] ICollector<ExchangedOrders> outqueue)
+    [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getsendorder))]
+    public static void Run(
+        [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getsendorder))] ExchangedOrders request, 
+        ILogger log, 
+        ExecutionContext context,
+        [Queue(nameof(ExchangedOrders.OutgoingMessageType.replyorder)] ICollector<ExchangedOrders> outqueue)
     {
         if (request == null) return;
         var myappsettingsValue = Environment.GetEnvironmentVariable("ConnectionStrings:CosmosDB");
