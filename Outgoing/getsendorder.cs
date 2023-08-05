@@ -12,7 +12,7 @@ public class getsendorder
 {
     [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getsendorder))]
     public static void Run(
-        [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getsendorder)] ExchangedOrders request, 
+        [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getsendorder))] ExchangedOrders request, 
         ILogger log, 
         ExecutionContext context,
         [Queue(nameof(ExchangedOrders.OutgoingMessageType.replyorder))] ICollector<ExchangedOrders> outqueue)

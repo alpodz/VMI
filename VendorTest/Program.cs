@@ -1,4 +1,5 @@
-﻿using Interfaces;
+﻿using Core;
+using Interfaces;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -39,7 +40,7 @@ namespace VendorTest
             //DBLocation = new FileObject(Configuration["DBLocation"]);
             DBLocation = new CosmosDB.CosmoObject(Configuration["ConnectionStrings:AzureCosmos"]);
             MainDBCollections = Base.PopulateMainCollection(DBLocation);
-            SendOrderService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], "sendauto");
+            SendOrderService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], nameof(ExchangedOrders.OutgoingMessageType.sendorder));
             AdjInventoryService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], "adjinventory");
         }
                

@@ -6,26 +6,28 @@ namespace Core
 {
     public class ExchangedOrders
     {
-        // TTAskAdmin_SendOrder -> [QUEUE "sendadmin"]
+        // TTAskAdmin_SendOrder -> [QUEUE "sendadmin"] (sends email)
         // OutgoingMessageType.AskAdmin_SendOrder       VENDOR ORDER NEEDED:      - Ask Admin For Permission to Place Order 
-        
-        // [QUEUE "getemail"] TTGetEmail ->  [QUEUE "getaskadmin_sendorder"] QTGetAskAdmin_SendOrder [sets DateOrdered] ->  [QUEUE "sendauto"] QTSendAuto (Order)
+
+        // Incoming Email (from admin):
+        // [QUEUE "getemail"] TTGetEmail -> [QUEUE "getaskadmin_sendorder"] [string] ->
+
         // IncomingMessageType.adminresponse_sendorder  Re: VENDOR ORDER NEEDED   - Get Response From Admin                  
+
+        // QTGetAskAdmin_SendOrder [sets DateOrdered] -> [QUEUE "sendorder"]  QTSendOrder (Order) ->
+
         // OutgoingMessageType.sendorder                ORDER                     - Send Vendor Order                       
-        
-        // [QUEUE "getemail"] TTGetEmail ->  [QUEUE "getsendorder"] QTGetSendOrder -> [QUEUE "sendauto"] QTSendAuto? (ExchangedOrder)
-        // IncomimgMessageType.getsendorder             ORDER                     - Receive Vendor Order / Customer Order   
+
+        // a) (Manual) [QUEUE "sendemail"] (text) -> To Vendor Email
+        // b) (Auto)   [QUEUE "getsendorder"] (ExchangedOrder) -> [QUEUE "replyorder"] QTReplyOrder
+
+        // IncomimgMessageType.getsendorder             ORDER                     - Receive Vendor Order / Customer Order          
         // OutgoingMessageType.replyorder               RE: ORDER                 - Send Order Response (Vendor/Customer)   replyorder -> sendauto
 
         // IncomingMessageType.getreplyorder            Re: ORDER                 - Receive Order Response                  getemail -> getreplyorder
 
         // Front-end:
         // OutgoingMessageType.sendorder                ORDER                     - Send Vendor Order                       sendorder -> sendauto
-
-        public enum SendAutoType
-        {
-            incomingorder
-        }
 
         public enum OutgoingMessageType
         {

@@ -13,7 +13,9 @@ public class SendOrder
         [QueueTrigger(nameof(ExchangedOrders.OutgoingMessageType.sendorder))] Order _order, 
         ILogger log, 
         ExecutionContext context, 
-        [Queue("sendauto")] ExchangedOrders outorder)
+        [Queue(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))] ExchangedOrders outorder,
+        [Queue("sendauto")] string emailout
+        )
     {
         var configurationBuilder = new ConfigurationBuilder()
                 .SetBasePath(context.FunctionAppDirectory)
@@ -54,7 +56,15 @@ public class SendOrder
 
             OutgoingOrder.RequiredBy = requiredby;
             if (_order.DateScheduled.HasValue) OutgoingOrder.RequiredBy = _order.DateScheduled.Value;
-            outorder = OutgoingOrder;
+
+            if (String.IsNullOrEmpty(OutgoingOrder.to))
+            {
+                outorder = OutgoingOrder;
+                return;
+            }
+
+            // format and send an email to the vendor email address
+            emailout = "My Email Here";
         }
     }
 }
