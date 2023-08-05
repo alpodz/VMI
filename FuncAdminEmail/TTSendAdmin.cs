@@ -33,13 +33,14 @@ namespace TTSendAdmin
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
 
-            var configurationBuilder = new ConfigurationBuilder()
-                 .SetBasePath(context.FunctionAppDirectory)
-                 .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
-                 .AddEnvironmentVariables()
-                 .Build();
+            //var configurationBuilder = new ConfigurationBuilder()
+            //     .SetBasePath(context.FunctionAppDirectory)
+            //     .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
+            //     .AddEnvironmentVariables()
+            //     .Build();
 
-            string myappsettingsValue = configurationBuilder["ConnectionStrings:CosmosDB"];
+            //string myappsettingsValue = configurationBuilder["ConnectionStrings:CosmosDB"];
+            var myappsettingsValue = Environment.GetEnvironmentVariable("ConnectionStrings:CosmosDB");
             var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
             var Orders = Base.PopulateDictionary(DBLocation, typeof(Order));
             var Configs = Base.PopulateDictionary(DBLocation, typeof(Configuration));
