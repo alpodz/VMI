@@ -9,17 +9,34 @@ using Core;
 namespace Auto_GetCustomerOrder;
 public class getsendorder
 {
-    [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getsendorder))]
+    [FunctionName("sendauto")]
     public static void Run(
-        [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getsendorder))] ExchangedOrders request, 
+        [QueueTrigger("sendauto")] Order incoming, 
         ILogger log, 
         ExecutionContext context,
-        [Queue(nameof(ExchangedOrders.OutgoingMessageType.replyorder)] ICollector<ExchangedOrders> outqueue)
+        [Queue(nameof(ExchangedOrders.OutgoingMessageType.replyorder))] ICollector<ExchangedOrders> outqueue)
     {
-        if (request == null) return;
+        if (incoming == null) return;
         var myappsettingsValue = Environment.GetEnvironmentVariable("ConnectionStrings:CosmosDB");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
         var DB = Base.PopulateMainCollection(DBLocation);
+
+        var request = new ExchangedOrders();
+        incoming.PartID
+            incoming.VendorPartName
+            incoming.CustomerID
+            incoming.CustomerOrderID
+            incoming.DateCompleted
+            incoming.DateScheduled
+            incoming.DateCompleted
+            incoming.RequiredBy
+            incoming.id
+            incoming.PartID
+            incoming.TotalAmountOrdered
+
+        request.OrderedPartTotal;
+        request.from;
+
 
         // make/schedule orders
         CheckFulfillment(request, DB);

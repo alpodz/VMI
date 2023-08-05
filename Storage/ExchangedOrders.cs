@@ -6,19 +6,26 @@ namespace Core
 {
     public class ExchangedOrders
     {
-        // Timer causes below:
-        // OutgoingMessageType.AskAdmin_SendOrder       VENDOR ORDER NEEDED:      - Ask Admin For Permission to Place Order  askadmin_sendorder -> sendadmin
-        // IncomingMessageType.adminresponse_sendorder  Re: VENDOR ORDER NEEDED   - Get Response From Admin                  getemail -> adminresponse_sendorder -> sendorder
-        // OutgoingMessageType.sendorder                ORDER                     - Send Vendor Order                        sendorder -> sendauto
-
-        // Flow is from above (and also from external orders)
-        // IncomimgMessageType.getsendorder             ORDER                     - Receive Vendor Order / Customer Order   getemail -> getsendorder -> replyorder
+        // TTAskAdmin_SendOrder -> [QUEUE "sendadmin"]
+        // OutgoingMessageType.AskAdmin_SendOrder       VENDOR ORDER NEEDED:      - Ask Admin For Permission to Place Order 
+        
+        // [QUEUE "getemail"] TTGetEmail ->  [QUEUE "getaskadmin_sendorder"] QTGetAskAdmin_SendOrder [sets DateOrdered] ->  [QUEUE "sendauto"] QTSendAuto (Order)
+        // IncomingMessageType.adminresponse_sendorder  Re: VENDOR ORDER NEEDED   - Get Response From Admin                  
+        // OutgoingMessageType.sendorder                ORDER                     - Send Vendor Order                       
+        
+        // [QUEUE "getemail"] TTGetEmail ->  [QUEUE "getsendorder"] QTGetSendOrder -> [QUEUE "sendauto"] QTSendAuto? (ExchangedOrder)
+        // IncomimgMessageType.getsendorder             ORDER                     - Receive Vendor Order / Customer Order   
         // OutgoingMessageType.replyorder               RE: ORDER                 - Send Order Response (Vendor/Customer)   replyorder -> sendauto
 
         // IncomingMessageType.getreplyorder            Re: ORDER                 - Receive Order Response                  getemail -> getreplyorder
 
         // Front-end:
         // OutgoingMessageType.sendorder                ORDER                     - Send Vendor Order                       sendorder -> sendauto
+
+        public enum SendAutoType
+        {
+            incomingorder
+        }
 
         public enum OutgoingMessageType
         {
@@ -30,6 +37,7 @@ namespace Core
             RemindAdmin_UnCompleted,        // PENDING UNCOMPLETED     -   Pending Uncompleted Orders - No Completed Date
             Unknown
         }
+
         public static string SetSubject(OutgoingMessageType req)
         {
             switch (req)
