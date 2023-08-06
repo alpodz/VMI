@@ -8,10 +8,13 @@
       "connectionId": "AzureWebJobsStorage"
     },
     "secrets1": {
-      "secretStore": null,
-      "resourceId": null,
-      "type": "secrets.user",
-      "connectionId": null
+      "type": "secrets.user"
+    },
+    "storage2": {
+      "secretStore": "LocalSecretsFile",
+      "type": "storage.emulator",
+      "connectionId": "Azure",
+      "dynamicId": null
     }
   }
 }

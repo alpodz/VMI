@@ -3,16 +3,16 @@ using DB.Vendor;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Threading.Tasks;
 
 namespace QTGetReplyOrder;
 public static class getreplyorder
 {
     [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))]
-    public static void Run([QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))] ExchangedOrders response, ILogger log, ExecutionContext context)
+    public static async Task Run([QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))] ExchangedOrders response, ILogger log)
     {
         if (response == null) return;
-
-        var myappsettingsValue = Environment.GetEnvironmentVariable("ConnectionStrings:CosmosDB");
+        string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
         var Orders = Base.PopulateDictionary(DBLocation, typeof(Order));
 

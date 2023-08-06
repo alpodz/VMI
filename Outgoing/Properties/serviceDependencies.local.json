@@ -3,9 +3,6 @@
     "appInsights1": {
       "type": "appInsights.sdk"
     },
-    "secrets1": {
-      "type": "secrets.user"
-    },
     "storage2": {
       "secretStore": "LocalSecretsFile",
       "resourceId": null,

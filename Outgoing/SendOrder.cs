@@ -1,30 +1,22 @@
-using System;
 using Core;
 using DB.Vendor;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
 
 namespace QTSendOrder;
 public class SendOrder
 {
     [FunctionName(nameof(ExchangedOrders.OutgoingMessageType.sendorder))]
-    public static void Run(
+    public static async Task Run(
         [QueueTrigger(nameof(ExchangedOrders.OutgoingMessageType.sendorder))] Order _order, 
         ILogger log, 
-        ExecutionContext context, 
         [Queue(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))] ExchangedOrders outorder,
         [Queue("sendauto")] string emailout
         )
     {
-        var configurationBuilder = new ConfigurationBuilder()
-                .SetBasePath(context.FunctionAppDirectory)
-                .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables()
-                .Build();
-
-        string myappsettingsValue = configurationBuilder["ConnectionStrings:CosmosDB"];
-
+        string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
         var MainDBCollections = Base.PopulateMainCollection(DBLocation);
 

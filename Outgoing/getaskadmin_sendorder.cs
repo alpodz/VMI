@@ -3,16 +3,18 @@ using DB.Vendor;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Threading.Tasks;
+
 namespace QTAdminResponse_SendOrder;
 public class getaskadmin_sendorder
 {
     [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getaskadmin_sendorder))]
-    public static void Run(
+    public static async Task Run(
         [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getaskadmin_sendorder))] ExchangedOrders response, 
         ILogger log)
     {
         if (response == null) return;
-        var myappsettingsValue = Environment.GetEnvironmentVariable("ConnectionStrings:CosmosDB");
+        string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
         var Orders = Base.PopulateDictionary(DBLocation, typeof(Order));
 

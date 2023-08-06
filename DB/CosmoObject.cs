@@ -34,8 +34,9 @@ namespace CosmosDB
 
         string IDBObject.Name { get; set; }
 
-        public void PopulateCollection(Type coltype, Type collistType, ref IList col)
+        public void PopulateCollection(Type coltype, Type collistType, ref IList? col)
         {
+            if (col == null) return;
             var task = PopulationCollectionAsync(coltype, collistType, col);
             task.Wait();
             var result = task.Result;
@@ -43,7 +44,7 @@ namespace CosmosDB
             col = task.Result;                      
         }
 
-        private async Task<IList> PopulationCollectionAsync(Type colType, Type listType, IList colListType)
+        private async Task<IList?> PopulationCollectionAsync(Type colType, Type listType, IList colListType)
         {
             var query = new QueryDefinition($"SELECT * FROM _{ContainerName} c WHERE c.Partition LIKE '_{colType.Name}_%'");
             if (_container == null) return colListType;
@@ -56,10 +57,13 @@ namespace CosmosDB
                     String output = new StreamReader(response.Content).ReadToEnd();
                     var obj = JObject.Parse(output);
                     obj.TryGetValue("Documents", StringComparison.InvariantCultureIgnoreCase,out var _documents);
-                    var result = (IList) JsonConvert.DeserializeObject(_documents.ToString(), listType);
-                    if (colListType.Count == 0) colListType = result;
+                    if (_documents == null) return colListType;
+                    var result = JsonConvert.DeserializeObject(_documents.ToString(), listType);
+                    if (result == null) return colListType;
+                    var result2 = (IList)result;
+                    if (colListType.Count == 0) colListType = result2;
                     else
-                        foreach (Base item in result)                           
+                        foreach (Base item in result2)                           
                             colListType.Add(item);
                 }
             }

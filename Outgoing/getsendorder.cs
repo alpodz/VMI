@@ -6,19 +6,20 @@ using System.Collections.Generic;
 using System.Linq;
 using Core;
 using Azure.Core;
+using System.Threading.Tasks;
 
 namespace Auto_GetCustomerOrder;
 public class getsendorder
 {
     [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getsendorder))]
-    public static void Run(
+    public static async Task Run(
         [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getsendorder))] ExchangedOrders request, 
         ILogger log, 
         ExecutionContext context,
         [Queue(nameof(ExchangedOrders.OutgoingMessageType.replyorder))] ICollector<ExchangedOrders> outqueue)
     {
         if (request == null) return;
-        var myappsettingsValue = Environment.GetEnvironmentVariable("ConnectionStrings:CosmosDB");
+        string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
         var DB = Base.PopulateMainCollection(DBLocation);
 

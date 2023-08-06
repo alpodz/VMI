@@ -6,14 +6,6 @@
     "storage1": {
       "type": "storage",
       "connectionId": "AzureWebJobsStorage"
-    },
-    "secrets1": {
-      "type": "secrets"
-    },
-    "storage2": {
-      "type": "storage",
-      "connectionId": "Blob",
-      "dynamicId": null
     }
   }
 }
