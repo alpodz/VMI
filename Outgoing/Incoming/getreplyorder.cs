@@ -5,11 +5,11 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
-namespace QTGetReplyOrder;
+namespace Functions.Incoming;
 public static class getreplyorder
 {
     [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))]
-    public static async Task Run([QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))] ExchangedOrders response, ILogger log)
+    public static async Task Run([QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))] InProgressOrder response, ILogger log)
     {
         if (response == null) return;
         string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
@@ -17,7 +17,7 @@ public static class getreplyorder
         var Orders = Base.PopulateDictionary(DBLocation, typeof(Order));
 
         // update the order placed
-        Order orig = (Order) Orders[response.OrderedOrderID];
+        Order orig = (Order)Orders[response.OrderedOrderID];
         if (orig != null)
         {
             if (response.orders.Count == 1 && response.orders[0].TotalAmountOrdered == 0) // negative response?

@@ -5,12 +5,11 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
-namespace QTAdminResponse_SendOrder;
-public class getaskadmin_sendorder
+public class getsendadminsendorder
 {
-    [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getaskadmin_sendorder))]
+    [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getsendadminsendorder))]
     public static async Task Run(
-        [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getaskadmin_sendorder))] ExchangedOrders response, 
+        [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getsendadminsendorder))] InProgressOrder response, 
         ILogger log)
     {
         if (response == null) return;

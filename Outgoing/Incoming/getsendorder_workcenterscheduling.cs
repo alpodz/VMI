@@ -4,9 +4,7 @@ using DB.Vendor;
 using System.Linq;
 using DB.Admin;
 
-namespace Auto_GetCustomerOrder;
-
-public class WorkCenterScheduling
+public class getsendorder_workcenterscheduling
 {
     public static Order SchedulePartOnWorkCenter(ref Dictionary<Type, Dictionary<string, IBase>> DB,
         int BatchNumber, int intAmt, DateTime BeginSchedule, DateTime EndSchedule, WorkcenterPart WorkcenterPart)

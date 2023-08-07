@@ -1,22 +1,19 @@
-﻿using DB.Vendor;
+﻿using Core;
+using DB.Vendor;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Core;
-using Azure.Core;
 using System.Threading.Tasks;
 
-namespace Auto_GetCustomerOrder;
 public class getsendorder
 {
     [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getsendorder))]
     public static async Task Run(
-        [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getsendorder))] ExchangedOrders request, 
+        [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getsendorder))] InProgressOrder request, 
         ILogger log, 
-        ExecutionContext context,
-        [Queue(nameof(ExchangedOrders.OutgoingMessageType.replyorder))] ICollector<ExchangedOrders> outqueue)
+        [Queue(nameof(ExchangedOrders.OutgoingMessageType.replyorder))] ICollector<InProgressOrder> outqueue)
     {
         if (request == null) return;
         string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
@@ -43,7 +40,7 @@ public class getsendorder
     }
 
 
-    public static bool CheckFulfillment(ExchangedOrders request, Dictionary<Type, Dictionary<string, IBase>> DB)
+    public static bool CheckFulfillment(InProgressOrder request, Dictionary<Type, Dictionary<string, IBase>> DB)
     {
         request.orders.Clear();
         // create the incoming order 
@@ -90,7 +87,7 @@ public class getsendorder
 
                 foreach (var rwWorkCenter in workcenters)
                 {
-                    var outgoingOrder = WorkCenterScheduling.SchedulePartOnWorkCenter(ref DB, ShipmentNumber, PartsInShipment, BeginDateOfProduction, EndDateOfProduction, rwWorkCenter);
+                    var outgoingOrder = getsendorder_workcenterscheduling.SchedulePartOnWorkCenter(ref DB, ShipmentNumber, PartsInShipment, BeginDateOfProduction, EndDateOfProduction, rwWorkCenter);
                     if (outgoingOrder != null)
                     {
                         PartsLeftToShip -= PartsInShipment;

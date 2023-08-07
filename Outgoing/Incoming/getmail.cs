@@ -1,10 +1,9 @@
 using Core;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
-using Microsoft.WindowsAzure.Storage.Queue;
-using System.Threading.Tasks;
+using System;
 
-namespace QTGetEmail;
+namespace Functions.Incoming;
 public class getmail
 {
     /// <summary>
@@ -15,18 +14,23 @@ public class getmail
     /// <param name="client"></param>
     /// <returns></returns>
     [FunctionName(nameof(getmail))]
-    public async Task Run([QueueTrigger(nameof(getmail))]string myQueueItem, ILogger log, CloudQueueClient client)
-    {        
+    public void Run([QueueTrigger(nameof(getmail))] string myQueueItem, ILogger log)
+    {
         var SplitString = myQueueItem.Split("||");
         var From = SplitString[0];
         var Subject = SplitString[1];
         var Body = SplitString[2];
-        
-        var IncomingMessage = ExchangedOrders.ParseSubject(Subject).ToString();
+        String IncomingMessage = ExchangedOrders.ParseSubject(Subject).ToString();
+
+        InProgressOrder IncomingOrder = new InProgressOrder
+        {
+            from = From,
+            body = Body,
+            OrderedOrderID = Subject.Substring(Subject.IndexOf(IncomingMessage), 36)
+        };
+
         if (string.IsNullOrEmpty(IncomingMessage)) return;
-        var queue = client.GetQueueReference(IncomingMessage);
-        await queue.CreateIfNotExistsAsync();
-        await queue.AddMessageAsync(new CloudQueueMessage(myQueueItem));            
+        CosmosDB.AzureQueue.SendToService("AzureWebJobsStorage", IncomingMessage, myQueueItem);
     }
 }
 

@@ -8,22 +8,25 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace TTAskAdmin_SendOrder;
-public class askadmin_sendorder
+public class TTsendadminsendorder
 {
-    [FunctionName(nameof(ExchangedOrders.OutgoingMessageType.askadmin_sendorder))]
-    public static async Task Run([TimerTrigger("*/15 * * * * *")] TimerInfo myTimer, ILogger log)
+    [FunctionName(nameof(TTsendadminsendorder))]
+    public static async Task Run([TimerTrigger("* */5 * * * *")] TimerInfo myTimer, ILogger log)
     {
         log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
 
         string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
         var MainDBCollections = Base.PopulateMainCollection(DBLocation);
-        var Configs = MainDBCollections[typeof(Configuration)];
-        Configuration AdminEmail = (Configuration)Configs["AdminEmail"];
 
         // only process if these items are set
         if (MainDBCollections == null) return;
+
+        var Configs = MainDBCollections[typeof(Configuration)];
+
+        if (!Configs.TryGetValue("AdminEmail", out var TestAdminEmail)) return;
+        Configuration AdminEmail = (Configuration) TestAdminEmail;
+
         // calculate first
         foreach (var objPart in MainDBCollections[typeof(Part)].Values.Cast<Part>())
             objPart.CalculateFields(DBLocation, ref MainDBCollections);
@@ -60,7 +63,6 @@ public class askadmin_sendorder
             RequiredBy = requiredby,
             VendorPartName = objPart.AssignedVendorPart.VendorPartName,
             WorkcenterID = "0",
-            IsDirty = true,
         };
 
         // Puts it in the Grid
@@ -73,7 +75,7 @@ public class askadmin_sendorder
 
         // Purposes of Emailing (for easy splitting)
         string ToAddress = AdminEmail;
-        string Subject = ExchangedOrders.SetSubject(ExchangedOrders.OutgoingMessageType.askadmin_sendorder) + objOrder.id;
+        string Subject = ExchangedOrders.SetSubject(ExchangedOrders.OutgoingMessageType.sendadminsendorder) + objOrder.id;
         string Body = body;
 
         string OutgoingQueueMessage = $"{ToAddress}||{Subject}||{Body}";

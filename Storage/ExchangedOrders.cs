@@ -1,6 +1,4 @@
-﻿using DB.Vendor;
-using System;
-using System.Collections.Generic;
+﻿using System;
 
 namespace Core
 {
@@ -31,12 +29,12 @@ namespace Core
 
         public enum OutgoingMessageType
         {
-            askadmin_sendorder,             // VENDOR ORDER NEEDED     -   Ask Admin For Permission to Place Order
+            sendadminsendorder,             // VENDOR ORDER NEEDED     -   Ask Admin For Permission to Place Order
             sendorder,                      // ORDER                   -   Send Vendor Order
             replyorder,                     // Re: ORDER               -   Send Order Response
-            RemindAdmin_UnOrdered,          // PENDING UNORDERED       -   Pending Unordered Orders - No Order Date
-            RemindAdmin_UnScheduled,        // PENDING UNSCHEDULED     -   Pending Unscheduled Orders - No Scheduled Date
-            RemindAdmin_UnCompleted,        // PENDING UNCOMPLETED     -   Pending Uncompleted Orders - No Completed Date
+            remindadminunordered,          // PENDING UNORDERED       -   Pending Unordered Orders - No Order Date
+            remindadminunscheduled,        // PENDING UNSCHEDULED     -   Pending Unscheduled Orders - No Scheduled Date
+            remindadminuncompleted,        // PENDING UNCOMPLETED     -   Pending Uncompleted Orders - No Completed Date
             Unknown
         }
 
@@ -44,17 +42,17 @@ namespace Core
         {
             switch (req)
             {
-                case OutgoingMessageType.askadmin_sendorder: 
+                case OutgoingMessageType.sendadminsendorder: 
                     return "VENDOR ORDER NEEDED:";          //  Ask Admin For Permission to Place Order
                 case OutgoingMessageType.sendorder: 
                     return "ORDER:";                        //  Send Vendor Order
                 case OutgoingMessageType.replyorder: 
                     return "Re: ORDER:";                    //  Send Order Response
-                case OutgoingMessageType.RemindAdmin_UnOrdered: 
+                case OutgoingMessageType.remindadminunordered: 
                     return "PENDING UNORDERED:";            //  Pending Unordered Orders - No Order Date
-                case OutgoingMessageType.RemindAdmin_UnScheduled: 
+                case OutgoingMessageType.remindadminunscheduled: 
                     return "PENDING UNSCHEDULED:";          //  Pending Unscheduled Orders - No Scheduled Date
-                case OutgoingMessageType.RemindAdmin_UnCompleted: 
+                case OutgoingMessageType.remindadminuncompleted: 
                     return "PENDING UNCOMPLETED:";          //  Pending Uncompleted Orders - No Completed Date
                 default: return String.Empty;
             }
@@ -62,7 +60,7 @@ namespace Core
 
         public enum IncomingMessageType
         {
-            getaskadmin_sendorder,          //  Re: VENDOR ORDER NEEDED -   Get Response From Admin
+            getsendadminsendorder,          //  Re: VENDOR ORDER NEEDED -   Get Response From Admin
             getsendorder,                   //  ORDER                  -   Receive Vendor Order / Customer Order
             getreplyorder,                  //  Re: ORDER              -   Receive Order Response
             unknown
@@ -70,21 +68,10 @@ namespace Core
 
         public static IncomingMessageType ParseSubject(string emailsubject)
         {
-            if (emailsubject.StartsWith("Re: " + SetSubject(OutgoingMessageType.askadmin_sendorder))) return IncomingMessageType.getaskadmin_sendorder;
+            if (emailsubject.StartsWith("Re: " + SetSubject(OutgoingMessageType.sendadminsendorder))) return IncomingMessageType.getsendadminsendorder;
             if (emailsubject.StartsWith(SetSubject(OutgoingMessageType.sendorder))) return IncomingMessageType.getsendorder;
             if (emailsubject.StartsWith(SetSubject(OutgoingMessageType.replyorder))) return IncomingMessageType.getreplyorder;
             return IncomingMessageType.unknown;
         }
-
-        public string to { get; set; }
-        public string from { get; set; }
-
-        public string OrderedOrderID { get; set; }
-        public string OrderedPartName { get; set; }
-        public int OrderedPartTotal { get; set; }
-        public DateTime RequiredBy { get; set; }
-
-        public IList<Order> orders { get; set; } = new List<Order>();
-
     }
 }

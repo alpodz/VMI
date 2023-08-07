@@ -183,7 +183,7 @@ namespace VendorTest.Pages
                         if (thistype.FullName != fm["type"][i]) continue;
                         if (fm.ContainsKey(i + "_Delete"))
                         {
-                            Program.MainDBCollections[thistype].Remove(fm["id"][i]);
+                            Program.MainDBCollections[thistype][fm["id"][i]].MarkDeleted();
                             Base.SaveCollection(Program.DBLocation, thistype, Program.MainDBCollections[thistype]);
                             break;
                         }

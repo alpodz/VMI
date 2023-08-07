@@ -59,7 +59,7 @@ namespace DB.Vendor
             CalculateFields(DBLocation, ref MainDB);
         }
 
-        public void CalculateFields(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, IBase>> MainDB)
+        public void CalculateFields(IDBObject  dBObject, ref Dictionary<Type, Dictionary<String, IBase>> MainDB)
         {
             if (MainDB == null) return;
             double NumberOfDaysForEstimation = 0;

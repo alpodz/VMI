@@ -13,6 +13,7 @@ public class Base : IBase
     public static IQueueService _AdjInventoryService;
 
     public bool IsDirty = false;
+    public bool IsDeleted = false;
 
     #region CustomAttributes
 
@@ -266,6 +267,8 @@ public class Base : IBase
 
     IQueueService IBase.AdjInventoryService { get => _AdjInventoryService; set => _AdjInventoryService = value; }
     IQueueService IBase.SendOrderService { get => _SendOrderService; set => _SendOrderService = value; }
+
+    public void MarkDeleted() { IsDeleted = true; }
 
 }
 

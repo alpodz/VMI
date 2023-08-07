@@ -1,5 +1,6 @@
 ﻿using Interfaces;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Cosmos.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections;
@@ -61,10 +62,14 @@ namespace CosmosDB
                     var result = JsonConvert.DeserializeObject(_documents.ToString(), listType);
                     if (result == null) return colListType;
                     var result2 = (IList)result;
-                    if (colListType.Count == 0) colListType = result2;
-                    else
-                        foreach (Base item in result2)                           
-                            colListType.Add(item);
+                    foreach (Base item in result2)
+                    {
+                        colListType.Add(item);
+                    }
+                    //if (colListType.Count == 0) colListType = result2;
+                    //else
+                    //    foreach (Base item in result2)                           
+                    //        colListType.Add(item);
                 }
             }
             return colListType;
@@ -83,13 +88,16 @@ namespace CosmosDB
         {            
             foreach (Base item in col)
             {
-                if (!item.IsDirty) continue;
+                if (_container == null) continue;
+                
+                if (item.IsDeleted)
+                    await _container.DeleteItemStreamAsync(item.GetPrimaryKeyValue(), new PartitionKey(item.Partition));
+                if (!item.IsDirty) continue;                
                 using MemoryStream savestream = new();
                 using StreamWriter writer = new(savestream);
                 writer.Write(System.Text.Json.JsonSerializer.Serialize(item, collectionType)); 
                 writer.Flush();
                 savestream.Position = 0;
-                if (_container == null) continue;
                 var upserteditem = await _container.UpsertItemStreamAsync(savestream, new PartitionKey(item.Partition));
                 item.IsDirty = false;
             }

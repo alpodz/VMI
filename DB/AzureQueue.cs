@@ -20,6 +20,12 @@ namespace CosmosDB
             Init(Connection, QueueName);
         }
 
+        public void SendToService(Object Item)
+        {
+            if (_client == null) return;
+            _client.SendMessage(System.Text.Json.JsonSerializer.Serialize(Item));
+        }
+
         public void SendToService(IBase Item)
         {
             if (_client == null) return;
@@ -46,6 +52,12 @@ namespace CosmosDB
             _client.SendMessage(Item);
         }
 
+        public static void SendToService(string Connection, string QueueName, Object Item)
+        {
+            Init(Connection, QueueName);
+            if (_client == null) return;
+            _client.SendMessage(System.Text.Json.JsonSerializer.Serialize(Item));
+        }
 
 
 

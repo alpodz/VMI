@@ -2,20 +2,13 @@ using Core;
 using DB.Admin;
 using DB.Vendor;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Queue;
-using Microsoft.WindowsAzure.Storage.Table;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
-namespace TTSendAdmin
-{
-    public class TTSendAdmin
+    public class TTsendadmin
     {
         /// <summary>
         /// RequestVendorOrder Out -   Man VENDOR ORDER NEEDED     -   Ask Admin For Permission to Place Order
@@ -28,7 +21,7 @@ namespace TTSendAdmin
         /// <param name="myTimer"></param>
         /// <param name="log"></param>
         /// <returns></returns>
-        [FunctionName(nameof(TTSendAdmin))]
+        [FunctionName(nameof(TTsendadmin))]
         public async Task Run([TimerTrigger("0 */3 * * * *")] TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
@@ -46,11 +39,11 @@ namespace TTSendAdmin
                 if (objOrd.DateAdminLastNotified.HasValue && objOrd.DateAdminLastNotified.Value.Date == DateTime.Now.Date) continue;
                 ExchangedOrders.OutgoingMessageType MessageType = ExchangedOrders.OutgoingMessageType.Unknown;
                 if (!objOrd.DateOrdered.HasValue && !objOrd.DateScheduled.HasValue && !objOrd.DateCompleted.HasValue)
-                    MessageType = ExchangedOrders.OutgoingMessageType.RemindAdmin_UnOrdered;
+                    MessageType = ExchangedOrders.OutgoingMessageType.remindadminunordered;
                 else if (objOrd.DateOrdered.HasValue && !objOrd.DateScheduled.HasValue && !objOrd.DateCompleted.HasValue)
-                    MessageType = ExchangedOrders.OutgoingMessageType.RemindAdmin_UnScheduled;
+                    MessageType = ExchangedOrders.OutgoingMessageType.remindadminunscheduled;
                 else if (objOrd.DateOrdered.HasValue && objOrd.DateScheduled.HasValue && objOrd.DateScheduled < DateTime.Now.Date && !objOrd.DateCompleted.HasValue)
-                    MessageType = ExchangedOrders.OutgoingMessageType.RemindAdmin_UnCompleted;
+                    MessageType = ExchangedOrders.OutgoingMessageType.remindadminuncompleted;
                 if (MessageType == ExchangedOrders.OutgoingMessageType.Unknown) continue;
                 if (!multipleorders.ContainsKey(MessageType)) multipleorders.Add(MessageType, new List<Order>());
                 multipleorders[MessageType].Add(objOrd);
@@ -67,13 +60,13 @@ namespace TTSendAdmin
 
                     switch (Message.Key)
                     {
-                        case ExchangedOrders.OutgoingMessageType.RemindAdmin_UnCompleted:
+                        case ExchangedOrders.OutgoingMessageType.remindadminuncompleted:
                             body += $" was scheduled to arrive or be completed for {order.DateScheduled} but has not been marked completed.";
                             break;
-                        case ExchangedOrders.OutgoingMessageType.RemindAdmin_UnScheduled:
+                        case ExchangedOrders.OutgoingMessageType.remindadminunscheduled:
                             body += $" has failed to be ordered and/or scheduled.";
                             break;
-                        case ExchangedOrders.OutgoingMessageType.RemindAdmin_UnOrdered:
+                        case ExchangedOrders.OutgoingMessageType.remindadminunordered:
                         default:
                             body += $" has not been ordered yet.";
                             break;
@@ -99,6 +92,4 @@ namespace TTSendAdmin
         }
 
     }
-}
-
 
