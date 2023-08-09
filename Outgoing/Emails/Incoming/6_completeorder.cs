@@ -5,25 +5,26 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
-namespace Functions.Incoming;
-public static class getreplyorder
+namespace Functions.Emails.Incoming;
+public static class completeorder
 {
-    [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))]
-    public static async Task Run([QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getreplyorder))] InProgressOrder response, ILogger log)
+    [FunctionName(nameof(ExchangedOrders.IncomingMessageType.completeorder))]
+    public static async Task Run([QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.completeorder))] InProgressOrder response, ILogger log)
     {
         if (response == null) return;
         string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
-        var Orders = Base.PopulateDictionary(DBLocation, typeof(Order));
+        var Orders = Base.PopulateDictionary(DBLocation, typeof(Order), response.OrderedOrderID);
 
         // update the order placed
-        Order orig = (Order)Orders[response.OrderedOrderID];
-        if (orig != null)
+        if (Orders.TryGetValue(response.OrderedOrderID, out var founditem))
         {
+            Order orig = (Order)founditem;
             if (response.orders.Count == 1 && response.orders[0].TotalAmountOrdered == 0) // negative response?
             {
                 orig.Message = response.orders[0].Message;
                 orig.DateOrdered = null;
+                orig.IsDirty = true;
             }
             // success
             else
@@ -39,7 +40,7 @@ public static class getreplyorder
                     orig.TotalAmountOrdered = order.TotalAmountOrdered;
                     orig.Message = order.Message;
                     orig.CustomerOrderID = order.id;
-
+                    orig.IsDirty = true;
                     response.orders.Remove(order);
                 }
 
@@ -52,6 +53,7 @@ public static class getreplyorder
                     order.PartID = orig.PartID;
                     order.CustomerOrderID = order.id;
                     order.WorkcenterID = "0";
+                    order.IsDirty = true;
                     Orders.Add(guid, order);
                 }
             }

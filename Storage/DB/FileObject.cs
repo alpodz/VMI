@@ -22,7 +22,7 @@ namespace Core.DB
             set { _Name = value; }
         }
 
-        public void PopulateCollection(Type itemType, Type colType, ref IList col)
+        public void PopulateCollection(Type itemType, Type colType, ref IList col, string ID)
         {
             if (!File.Exists(Name)) return;
             var jsonreader = new System.Text.Json.Utf8JsonReader(File.ReadAllBytes(Name));
@@ -56,6 +56,9 @@ namespace Core.DB
             File.Move(tempFile, Name);
         }
 
-
+        public void SaveObject(Type objectType, IBase item, bool listsave)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

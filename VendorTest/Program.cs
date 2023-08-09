@@ -40,8 +40,8 @@ namespace VendorTest
             //DBLocation = new FileObject(Configuration["DBLocation"]);
             DBLocation = new CosmosDB.CosmoObject(Configuration["ConnectionStrings:AzureCosmos"]);
             MainDBCollections = Base.PopulateMainCollection(DBLocation);
-            SendOrderService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], nameof(ExchangedOrders.OutgoingMessageType.sendorder));
-            AdjInventoryService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], "adjinventory");
+            SendOrderService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], nameof(ExchangedOrders.OutgoingMessageType.generateorder));
+            AdjInventoryService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], nameof(ExchangedOrders.InternalServices.adjinventory));
         }
                
     }

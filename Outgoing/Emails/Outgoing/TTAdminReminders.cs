@@ -8,20 +8,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-    public class TTsendadmin
+    public class TTAdminReminders
     {
-        /// <summary>
-        /// RequestVendorOrder Out -   Man VENDOR ORDER NEEDED     -   Ask Admin For Permission to Place Order
-        /// OldUnOrdered                 Out -   Man PENDING UNORDERED       -   Pending Unordered Orders - No Order Date
-        /// OldUnScheduled               Out -   Man PENDING UNSCHEDULED     -   Pending Unscheduled Orders - No Scheduled Date
-        ///-- SendAdminCustomerFail Out -   Man ORDER FAILURE           -   Non-Vendor Order - Order Date, Not Scheduled(Message)
-        ///-- SendAdminVendorFail Out -   Man ORDER FAILURE           -   Vendor Order - Order Date, Not Scheduled(Message)
-        /// OldUnCompleted Out -   Man PENDING UNCOMPLETED     -   Pending Uncompleted Orders - No Completed Date
-        /// </summary>
-        /// <param name="myTimer"></param>
-        /// <param name="log"></param>
-        /// <returns></returns>
-        [FunctionName(nameof(TTsendadmin))]
+    /// <summary>
+    /// Emails via the Queue:  "sendadmin"
+    /// 
+    /// RequestVendorOrder      VENDOR ORDER NEEDED     -   Ask Admin For Permission to Place Order
+    /// OldUnOrdered            PENDING UNORDERED       -   Pending Unordered Orders - No Order Date
+    /// OldUnScheduled          PENDING UNSCHEDULED     -   Pending Unscheduled Orders - No Scheduled Date
+    /// OldUnCompleted Out      PENDING UNCOMPLETED     -   Pending Uncompleted Orders - No Completed Date
+    
+    /// Prospective:
+    ///-- SendAdminCustomerFail ORDER FAILURE           -   Non-Vendor Order - Order Date, Not Scheduled(Message)
+    ///-- SendAdminVendorFail   ORDER FAILURE           -   Vendor Order - Order Date, Not Scheduled(Message)
+    /// </summary>
+    [FunctionName(nameof(TTAdminReminders))]
         public async Task Run([TimerTrigger("0 */3 * * * *")] TimerInfo myTimer, ILogger log)
         {
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
@@ -78,15 +79,15 @@ using System.Threading.Tasks;
                     order.DateAdminLastNotified = DateTime.Now.Date;
 
                     // Purposes of Emailing (for easy splitting)
-                    string ToAddress = ((Configuration) Configs["Admin"]).Value;
+                    string ToAddress = ((Configuration) Configs[nameof(ExchangedOrders.RequiredConfiguration.AdminEmail)]).Value;
                     string Subject = ExchangedOrders.SetSubject(Message.Key) + "Summary";
                     string Body = body + "</BODY></HTML>";
 
                     string OutgoingQueueMessage = $"{ToAddress}||{Subject}||{Body}";
 
-                    CosmosDB.AzureQueue.SendToService("AzureWebJobsStorage", "sendadmin", OutgoingQueueMessage);
+                    CosmosDB.AzureQueue.SendToService("AzureWebJobsStorage", nameof(ExchangedOrders.OutgoingEmailType.sendadmin), OutgoingQueueMessage);
 
-                    DBLocation.SaveCollection(typeof(Order), new[] { order });
+                    Base.SaveObject(DBLocation, typeof(Order), order);
                 }               
             }
         }

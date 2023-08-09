@@ -27,11 +27,28 @@ namespace Core
         // Front-end:
         // OutgoingMessageType.sendorder                ORDER                     - Send Vendor Order                       sendorder -> sendauto
 
+        public enum InternalServices
+        {
+            adjinventory
+        }
+
+        public enum RequiredConfiguration
+        {
+            AdminEmail
+        }
+
+
+        public enum OutgoingEmailType
+        {
+            sendadmin,
+            sendauto
+        }
+
         public enum OutgoingMessageType
         {
-            sendadminsendorder,             // VENDOR ORDER NEEDED     -   Ask Admin For Permission to Place Order
-            sendorder,                      // ORDER                   -   Send Vendor Order
-            replyorder,                     // Re: ORDER               -   Send Order Response
+            requiredorder,                 // VENDOR ORDER NEEDED     -   Ask Admin For Permission to Place Order
+            generateorder,                 // ORDER                   -   Send Vendor Order
+            requirecompleteorder,          // Re: ORDER               -   Ask Vendor Admin for Confirmation of Generated Order
             remindadminunordered,          // PENDING UNORDERED       -   Pending Unordered Orders - No Order Date
             remindadminunscheduled,        // PENDING UNSCHEDULED     -   Pending Unscheduled Orders - No Scheduled Date
             remindadminuncompleted,        // PENDING UNCOMPLETED     -   Pending Uncompleted Orders - No Completed Date
@@ -42,11 +59,11 @@ namespace Core
         {
             switch (req)
             {
-                case OutgoingMessageType.sendadminsendorder: 
+                case OutgoingMessageType.requiredorder: 
                     return "VENDOR ORDER NEEDED:";          //  Ask Admin For Permission to Place Order
-                case OutgoingMessageType.sendorder: 
+                case OutgoingMessageType.generateorder: 
                     return "ORDER:";                        //  Send Vendor Order
-                case OutgoingMessageType.replyorder: 
+                case OutgoingMessageType.requirecompleteorder: 
                     return "Re: ORDER:";                    //  Send Order Response
                 case OutgoingMessageType.remindadminunordered: 
                     return "PENDING UNORDERED:";            //  Pending Unordered Orders - No Order Date
@@ -60,17 +77,17 @@ namespace Core
 
         public enum IncomingMessageType
         {
-            getsendadminsendorder,          //  Re: VENDOR ORDER NEEDED -   Get Response From Admin
-            getsendorder,                   //  ORDER                  -   Receive Vendor Order / Customer Order
-            getreplyorder,                  //  Re: ORDER              -   Receive Order Response
+            processrequiredorder,          //  Re: VENDOR ORDER NEEDED -   Get Response From Admin
+            processorder,                   //  ORDER                  -   Receive Vendor Order / Customer Order
+            completeorder,                  //  Re: ORDER              -   Receive Order Response
             unknown
         }
 
         public static IncomingMessageType ParseSubject(string emailsubject)
         {
-            if (emailsubject.StartsWith("Re: " + SetSubject(OutgoingMessageType.sendadminsendorder))) return IncomingMessageType.getsendadminsendorder;
-            if (emailsubject.StartsWith(SetSubject(OutgoingMessageType.sendorder))) return IncomingMessageType.getsendorder;
-            if (emailsubject.StartsWith(SetSubject(OutgoingMessageType.replyorder))) return IncomingMessageType.getreplyorder;
+            if (emailsubject.StartsWith("Re: " + SetSubject(OutgoingMessageType.requiredorder))) return IncomingMessageType.processrequiredorder;
+            if (emailsubject.StartsWith(SetSubject(OutgoingMessageType.generateorder))) return IncomingMessageType.processorder;
+            if (emailsubject.StartsWith(SetSubject(OutgoingMessageType.requirecompleteorder))) return IncomingMessageType.completeorder;
             return IncomingMessageType.unknown;
         }
     }

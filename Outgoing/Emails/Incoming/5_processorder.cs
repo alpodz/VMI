@@ -7,13 +7,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-public class getsendorder
+public class processorder
 {
-    [FunctionName(nameof(ExchangedOrders.IncomingMessageType.getsendorder))]
+    [FunctionName(nameof(ExchangedOrders.IncomingMessageType.processorder))]
     public static async Task Run(
-        [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.getsendorder))] InProgressOrder request, 
+        [QueueTrigger(nameof(ExchangedOrders.IncomingMessageType.processorder))] InProgressOrder request, 
         ILogger log, 
-        [Queue(nameof(ExchangedOrders.OutgoingMessageType.replyorder))] ICollector<InProgressOrder> outqueue)
+        [Queue(nameof(ExchangedOrders.IncomingMessageType.completeorder))] ICollector<InProgressOrder> outqueue)
     {
         if (request == null) return;
         string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
@@ -39,7 +39,6 @@ public class getsendorder
         outqueue.Add(request);
     }
 
-
     public static bool CheckFulfillment(InProgressOrder request, Dictionary<Type, Dictionary<string, IBase>> DB)
     {
         request.orders.Clear();
@@ -48,24 +47,10 @@ public class getsendorder
         { id = request.OrderedOrderID, VendorOrder = false, TotalAmountOrdered = request.OrderedPartTotal, DateOrdered = DateTime.Now.Date, Message = string.Empty, RequiredBy = request.RequiredBy };
         try
         {
-            var customer = DB[typeof(Customer)].Cast<Customer>().FirstOrDefault(a => a.EmailAddress == request.from);
-            if (customer == null)
-                incomingOrder.Message += $"Unregistered User for email: {request.from} |";
-            else
-                incomingOrder.CustomerID = customer.id;
-
-            Part PartID = DB[typeof(Part)].Cast<Part>().FirstOrDefault(a => a.Name == request.OrderedPartName);
-            if (PartID == null)
-                incomingOrder.Message += $"Part {request.OrderedPartName} does not exist. |";
-            else
-                incomingOrder.PartID = PartID.id;
-
-            var workcenters = DB[typeof(WorkcenterPart)].Cast<WorkcenterPart>().Where(a => a.PartID == PartID.id).OrderBy(a => a.PriorityLevel).ToList();
-            if (workcenters.Count == 0)
-                incomingOrder.Message += $"No Workcenters Setup for Part {request.OrderedPartName} |";
-
-            if (!incomingOrder.RequiredBy.HasValue || incomingOrder.RequiredBy.Value.Date < DateTime.Now.Date)
-                incomingOrder.Message += $"Required By Date is invalid {request.RequiredBy} |";
+            Customer customer = ValidateCustomer(request, DB, incomingOrder);
+            Part PartID = ValidatePart(request, DB, incomingOrder);
+            List<WorkcenterPart> workcenters = ValidateWorkCenters(request, DB, incomingOrder, PartID);
+            ValidateRequiredByDate(request, incomingOrder);
 
             if (incomingOrder.Message != string.Empty)
             {
@@ -87,7 +72,7 @@ public class getsendorder
 
                 foreach (var rwWorkCenter in workcenters)
                 {
-                    var outgoingOrder = getsendorder_workcenterscheduling.SchedulePartOnWorkCenter(ref DB, ShipmentNumber, PartsInShipment, BeginDateOfProduction, EndDateOfProduction, rwWorkCenter);
+                    var outgoingOrder = processorder_workcenterscheduling.SchedulePartOnWorkCenter(ref DB, ShipmentNumber, PartsInShipment, BeginDateOfProduction, EndDateOfProduction, rwWorkCenter);
                     if (outgoingOrder != null)
                     {
                         PartsLeftToShip -= PartsInShipment;
@@ -116,5 +101,39 @@ public class getsendorder
         incomingOrder.Message += "Unable to Schedule Part";
         request.orders.Add(incomingOrder);
         return false;
+    }
+
+    private static void ValidateRequiredByDate(InProgressOrder request, Order incomingOrder)
+    {
+        if (!incomingOrder.RequiredBy.HasValue || incomingOrder.RequiredBy.Value.Date < DateTime.Now.Date)
+            incomingOrder.Message += $"Required By Date is invalid {request.RequiredBy} |";
+    }
+
+    private static List<WorkcenterPart> ValidateWorkCenters(InProgressOrder request, Dictionary<Type, Dictionary<string, IBase>> DB, Order incomingOrder, Part PartID)
+    {
+        var workcenters = DB[typeof(WorkcenterPart)].Cast<WorkcenterPart>().Where(a => a.PartID == PartID.id).OrderBy(a => a.PriorityLevel).ToList();
+        if (workcenters.Count == 0)
+            incomingOrder.Message += $"No Workcenters Setup for Part {request.OrderedPartName} |";
+        return workcenters;
+    }
+
+    private static Customer ValidateCustomer(InProgressOrder request, Dictionary<Type, Dictionary<string, IBase>> DB, Order incomingOrder)
+    {
+        var customer = DB[typeof(Customer)].Cast<Customer>().FirstOrDefault(a => a.EmailAddress == request.from);
+        if (customer == null)
+            incomingOrder.Message += $"Unregistered User for email: {request.from} |";
+        else
+            incomingOrder.CustomerID = customer.id;
+        return customer;
+    }
+
+    private static Part ValidatePart(InProgressOrder request, Dictionary<Type, Dictionary<string, IBase>> DB, Order incomingOrder)
+    {
+        Part PartID = DB[typeof(Part)].Cast<Part>().FirstOrDefault(a => a.Name == request.OrderedPartName);
+        if (PartID == null)
+            incomingOrder.Message += $"Part {request.OrderedPartName} does not exist. |";
+        else
+            incomingOrder.PartID = PartID.id;
+        return PartID;
     }
 }

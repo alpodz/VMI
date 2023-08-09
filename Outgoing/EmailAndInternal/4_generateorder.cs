@@ -5,11 +5,16 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
-public class sendorder
+public class generateorder
 {
-    [FunctionName(nameof(ExchangedOrders.OutgoingMessageType.sendorder))]
+
+    // NOTE: WE NEED TO WRITE A MESSAGE TO THE VENDOR
+    // The vendor should get a nice order message requiring their response, this will be processed through incomingemail
+    // and be shuffled to 'completeorder'
+    // 'sendauto' is the outgoing email.
+    [FunctionName(nameof(ExchangedOrders.OutgoingMessageType.generateorder))]
     public static async Task Run(
-        [QueueTrigger(nameof(ExchangedOrders.OutgoingMessageType.sendorder))] Order inorder, 
+        [QueueTrigger(nameof(ExchangedOrders.OutgoingMessageType.generateorder))] Order inorder, 
         ILogger log)
     {
         string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
@@ -46,13 +51,9 @@ public class sendorder
             if (inorder.DateScheduled.HasValue) OutgoingOrder.RequiredBy = inorder.DateScheduled.Value;
 
             if (String.IsNullOrEmpty(OutgoingOrder.to))
-            {
-                CosmosDB.AzureQueue.SendToService("AzureWebJobsStorage",nameof(ExchangedOrders.IncomingMessageType.getreplyorder), OutgoingOrder);
-                return;
-            }
-
-            // format and send an email to the vendor email address
-            CosmosDB.AzureQueue.SendToService("AzureWebJobsStorage", "sendauto", "My Email Here");
+                CosmosDB.AzureQueue.SendToService("AzureWebJobsStorage",  nameof(ExchangedOrders.IncomingMessageType.processorder), OutgoingOrder);
+            else
+                CosmosDB.AzureQueue.SendToService("AzureWebJobsStorage", nameof(ExchangedOrders.OutgoingEmailType.sendauto), "My Email Here");
         }
     }
 }

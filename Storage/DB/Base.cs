@@ -12,6 +12,7 @@ public class Base : IBase
     public static IQueueService _SendOrderService;
     public static IQueueService _AdjInventoryService;
 
+    public bool IsNew = true;
     public bool IsDirty = false;
     public bool IsDeleted = false;
 
@@ -209,19 +210,19 @@ public class Base : IBase
         instance.Add(guid, newi);
     }
 
-    public static IList PopulateTypeCollection(IDBObject DBLocation, Type item)
+    public static IList PopulateTypeCollection(IDBObject DBLocation, Type item, String ID = "%")
     {
         var listType = typeof(List<>);
         var constr = listType.MakeGenericType(item);
         var instance = (IList)Activator.CreateInstance(constr);
         DBLocation.Name = item.Name;
-        DBLocation.PopulateCollection(item, constr, ref instance);
+        DBLocation.PopulateCollection(item, constr, ref instance, ID);
         return instance;
     }
 
-    public static Dictionary<String, IBase> PopulateDictionary(IDBObject DBLocation, Type item)
+    public static Dictionary<String, IBase> PopulateDictionary(IDBObject DBLocation, Type item, String ID = "%")
     {
-        return PopulateTypeCollection(DBLocation, item).Cast<IBase>().ToDictionary(a => a.GetPrimaryKeyValue());
+        return PopulateTypeCollection(DBLocation, item, ID).Cast<IBase>().ToDictionary(a => a.GetPrimaryKeyValue());
     }
 
     public static Dictionary<Type, Dictionary<String, IBase>> PopulateMainCollection(IDBObject DBLocation)
@@ -252,6 +253,11 @@ public class Base : IBase
         DBLocation.SaveCollection(CollectionType, col);
     }
 
+    public static void SaveObject(IDBObject DBLocation, Type ObjectType, IBase Obj)
+    {
+        DBLocation.SaveObject(ObjectType, Obj, false);
+    }
+
     //public ICollection Collection(Type Table)
     //{
     //    return MainDBCollections[Table].Values;
@@ -269,7 +275,6 @@ public class Base : IBase
     IQueueService IBase.SendOrderService { get => _SendOrderService; set => _SendOrderService = value; }
 
     public void MarkDeleted() { IsDeleted = true; }
-
 }
 
 

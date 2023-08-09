@@ -3,10 +3,11 @@ using DB.Vendor;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace QTAdjInventory
+namespace Functions.Internal
 {
     public class adjinventory
     {
@@ -15,32 +16,33 @@ namespace QTAdjInventory
         {
             string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
             var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
-            var Parts = Base.PopulateDictionary(DBLocation, typeof(Part));
-            var Recipe = Base.PopulateDictionary(DBLocation, typeof(Recipe));
 
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
 
-            if (DBLocation == null || Parts == null || Recipe == null) return;
-
             if (order.VendorOrder)
             {
+                var Parts = Base.PopulateDictionary(DBLocation, typeof(Part), order.PartID);
+                if (Parts.Count == 0) return;
                 var objPart = (Part)Parts[order.PartID];
-                if (objPart == null) return;
                 objPart.InStock += order.TotalAmountOrdered;
                 order.Message = "Vendor - Shipment Arrived.";
+                Base.SaveCollection(DBLocation, typeof(Part), Parts);
             }
             else
             {
+                var Recipe = Base.PopulateDictionary(DBLocation, typeof(Recipe));
                 foreach (var objAssocParts in Recipe.Cast<Recipe>().Where(a => a.CreatedPartID == order.PartID))
                 {
+                    var Parts = Base.PopulateDictionary(DBLocation, typeof(Part), objAssocParts.PartID);
+                    if (Parts.Count == 0) return;
                     var objPart = (Part)Parts[objAssocParts.PartID];
-                    if (objPart == null) return;
                     objPart.InStock -= objAssocParts.NumberOfParts;
+                    Base.SaveObject(DBLocation, typeof(Part), objPart);
                 }
                 order.Message = "Customer - Shipment Ready.";
             }
+            Base.SaveObject(DBLocation, typeof(Order), order);
 
-            Base.SaveCollection(DBLocation, typeof(Part), Parts);
-        }                
+        }
     }
 }

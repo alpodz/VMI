@@ -35,19 +35,19 @@ namespace CosmosDB
 
         string IDBObject.Name { get; set; }
 
-        public void PopulateCollection(Type coltype, Type collistType, ref IList? col)
+        public void PopulateCollection(Type coltype, Type collistType, ref IList? col, string ID)
         {
             if (col == null) return;
-            var task = PopulationCollectionAsync(coltype, collistType, col);
+            var task = PopulationCollectionAsync(coltype, collistType, col, ID);
             task.Wait();
             var result = task.Result;
             if (result == null) return;
-            col = task.Result;                      
+            col = task.Result;
         }
 
-        private async Task<IList?> PopulationCollectionAsync(Type colType, Type listType, IList colListType)
+        private async Task<IList?> PopulationCollectionAsync(Type colType, Type listType, IList colListType, String QueryAddOn)
         {
-            var query = new QueryDefinition($"SELECT * FROM _{ContainerName} c WHERE c.Partition LIKE '_{colType.Name}_%'");
+            var query = new QueryDefinition($"SELECT * FROM _{ContainerName} c WHERE c.Partition LIKE '_{colType.Name}_{QueryAddOn}'");
             if (_container == null) return colListType;
             using (FeedIterator iter = this._container.GetItemQueryStreamIterator(query))
             {
@@ -62,14 +62,13 @@ namespace CosmosDB
                     var result = JsonConvert.DeserializeObject(_documents.ToString(), listType);
                     if (result == null) return colListType;
                     var result2 = (IList)result;
-                    foreach (Base item in result2)
-                    {
-                        colListType.Add(item);
-                    }
                     //if (colListType.Count == 0) colListType = result2;
                     //else
-                    //    foreach (Base item in result2)                           
-                    //        colListType.Add(item);
+                        foreach (Base item in result2)
+                    {
+                        item.IsNew = false;
+                        colListType.Add(item);
+                    }
                 }
             }
             return colListType;
@@ -87,22 +86,29 @@ namespace CosmosDB
         public async void SaveCollection(Type collectionType, IList col)
         {            
             foreach (Base item in col)
-            {
-                if (_container == null) continue;
-                
-                if (item.IsDeleted)
-                    await _container.DeleteItemStreamAsync(item.GetPrimaryKeyValue(), new PartitionKey(item.Partition));
-                if (!item.IsDirty) continue;                
-                using MemoryStream savestream = new();
-                using StreamWriter writer = new(savestream);
-                writer.Write(System.Text.Json.JsonSerializer.Serialize(item, collectionType)); 
-                writer.Flush();
-                savestream.Position = 0;
-                var upserteditem = await _container.UpsertItemStreamAsync(savestream, new PartitionKey(item.Partition));
-                item.IsDirty = false;
-            }
+                await Save(collectionType, item, true);
         }
 
+        private async Task Save(Type objectType, IBase item, bool listsave)
+        {
+            if (_container == null) return;
+            var BaseItem = (Base)item;
+            if (BaseItem.IsDeleted)
+                await _container.DeleteItemStreamAsync(item.GetPrimaryKeyValue(), new PartitionKey(BaseItem.Partition));
+            if (listsave && !BaseItem.IsDirty && !BaseItem.IsNew) return;
+            using MemoryStream savestream = new();
+            using StreamWriter writer = new(savestream);
+            writer.Write(System.Text.Json.JsonSerializer.Serialize(item, objectType));
+            writer.Flush();
+            savestream.Position = 0;
+            var upserteditem = await _container.UpsertItemStreamAsync(savestream, new PartitionKey(BaseItem.Partition));
+            BaseItem.IsDirty = false;
+        }
+
+        public async void SaveObject(Type objectType, IBase item, bool listsave)
+        {
+            await Save(objectType, item, listsave);
+        }
     }
 
 }

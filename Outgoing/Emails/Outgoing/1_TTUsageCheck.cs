@@ -8,9 +8,17 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-public class TTsendadminsendorder
+public class TTUsageChecker
 {
-    [FunctionName(nameof(TTsendadminsendorder))]
+    /// <summary>
+    /// Checks the Usage of Items and sends email via 'sendadmin'
+    /// 
+    /// Notifies Admin to Take Action
+    /// </summary>
+    /// <param name="myTimer"></param>
+    /// <param name="log"></param>
+    /// <returns></returns>
+    [FunctionName(nameof(TTUsageChecker))]
     public static async Task Run([TimerTrigger("* */5 * * * *")] TimerInfo myTimer, ILogger log)
     {
         log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
@@ -24,7 +32,7 @@ public class TTsendadminsendorder
 
         var Configs = MainDBCollections[typeof(Configuration)];
 
-        if (!Configs.TryGetValue("AdminEmail", out var TestAdminEmail)) return;
+        if (!Configs.TryGetValue(nameof(ExchangedOrders.RequiredConfiguration.AdminEmail), out var TestAdminEmail)) return;
         Configuration AdminEmail = (Configuration) TestAdminEmail;
 
         // calculate first
@@ -67,7 +75,7 @@ public class TTsendadminsendorder
 
         // Puts it in the Grid
         objOrder.DateAdminLastNotified = DateTime.Now.Date;
-        DBLocation.SaveCollection(typeof(Order), new[] { objOrder });
+        Base.SaveObject(DBLocation,typeof(Order), objOrder);
 
         var body = $"{objOrder.Message} {objOrder.VendorPartName} with a Quantity of: {objOrder.TotalAmountOrdered} and is needed by: {objOrder.RequiredBy.GetValueOrDefault(DateTime.MinValue)}";
         if (objPart.DateRequiredBy.GetValueOrDefault(DateTime.MinValue) < DateTime.Now.Date) body += " WARNING: The Date Required is in the Past, we will request the current date plus lead time";
@@ -75,10 +83,10 @@ public class TTsendadminsendorder
 
         // Purposes of Emailing (for easy splitting)
         string ToAddress = AdminEmail;
-        string Subject = ExchangedOrders.SetSubject(ExchangedOrders.OutgoingMessageType.sendadminsendorder) + objOrder.id;
+        string Subject = ExchangedOrders.SetSubject(ExchangedOrders.OutgoingMessageType.requiredorder) + objOrder.id;
         string Body = body;
 
         string OutgoingQueueMessage = $"{ToAddress}||{Subject}||{Body}";
-        CosmosDB.AzureQueue.SendToService("AzureWebJobsStorage","sendadmin", OutgoingQueueMessage);
+        CosmosDB.AzureQueue.SendToService("AzureWebJobsStorage", nameof(ExchangedOrders.OutgoingEmailType.sendadmin), OutgoingQueueMessage);
     }
 }
