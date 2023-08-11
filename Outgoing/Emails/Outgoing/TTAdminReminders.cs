@@ -28,14 +28,15 @@ using System.Threading.Tasks;
             log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
             var appsettings = await new CosmosDB.Config().GetValue("AzureCosmos");
             var DBLocation = new CosmosDB.CosmoObject(appsettings);
-            var Orders = Base.PopulateDictionary(DBLocation, typeof(Order));
-            var Configs = Base.PopulateDictionary(DBLocation, typeof(Configuration));
-
+            var Orders = await DBLocation.PopulateTypeCollection(typeof(Order));
+            var config = (Configuration) await DBLocation.GetObjectAsync<Configuration>(nameof(ExchangedOrders.RequiredConfiguration.AdminEmail));
+        
             // only process if these items are set
-            if (Orders == null || Configs == null) return;
+            if (Orders == null || config == null) return;
             var multipleorders = new Dictionary<ExchangedOrders.OutgoingMessageType, List<Order>>();
+            var adminEmail = config.Value;
 
-            foreach (Order objOrd in Orders.Values.Cast<Order>())
+        foreach (Order objOrd in Orders.Cast<Order>())
             {
                 if (objOrd.DateAdminLastNotified.HasValue && objOrd.DateAdminLastNotified.Value.Date == DateTime.Now.Date) continue;
                 ExchangedOrders.OutgoingMessageType MessageType = ExchangedOrders.OutgoingMessageType.Unknown;
@@ -78,8 +79,8 @@ using System.Threading.Tasks;
 
                     order.DateAdminLastNotified = DateTime.Now.Date;
 
-                    // Purposes of Emailing (for easy splitting)
-                    string ToAddress = ((Configuration) Configs[nameof(ExchangedOrders.RequiredConfiguration.AdminEmail)]).Value;
+                // Purposes of Emailing (for easy splitting)
+                string ToAddress = adminEmail;
                     string Subject = ExchangedOrders.SetSubject(Message.Key) + "Summary";
                     string Body = body + "</BODY></HTML>";
 
@@ -87,7 +88,7 @@ using System.Threading.Tasks;
 
                     CosmosDB.AzureQueue.SendToService("AzureWebJobsStorage", nameof(ExchangedOrders.OutgoingEmailType.sendadmin), OutgoingQueueMessage);
 
-                    Base.SaveObject(DBLocation, typeof(Order), order);
+                    await DBLocation.SaveObjectAsync<Order>(order);
                 }               
             }
         }

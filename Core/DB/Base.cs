@@ -1,17 +1,13 @@
 ﻿using Interfaces;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 public class Base : IBase
 {
-    private IDBObject _DBLocation;
-    private Dictionary<Type, Dictionary<String, IBase>> _MainDBCollections;
-    public static IQueueService _SendOrderService;
-    public static IQueueService _AdjInventoryService;
+    private IDBObject? _DBLocation;
+    private Dictionary<Type, Dictionary<String, IBase>>? _MainDBCollections;
+    public static IQueueService? _SendOrderService;
+    public static IQueueService? _AdjInventoryService;
 
     public bool IsNew = true;
     public bool IsDirty = false;
@@ -128,7 +124,7 @@ public class Base : IBase
     #endregion
 
     #region Property Related
-    public static PropertyInfo GetKey(Type item, String TypeOfKey)
+    public static PropertyInfo? GetKey(Type item, String TypeOfKey)
     {
         if (item == null || String.IsNullOrEmpty(TypeOfKey)) return null;
         foreach (var prop in item.GetProperties())
@@ -138,7 +134,7 @@ public class Base : IBase
         return null;
     }
 
-    public static bool GetAttribute(PropertyInfo prop, Type attrib, out Object output)
+    public static bool GetAttribute(PropertyInfo prop, Type attrib, out Object? output)
     {
         output = null;
         var attribs = prop.GetCustomAttributes(attrib, false);
@@ -159,18 +155,18 @@ public class Base : IBase
         return ((DisplayProperty)attribs[0]).GetValue();
     }
 
-    public static string GetPrimaryKey(Type item)
+    public static string? GetPrimaryKey(Type item)
     {
         var KeyProperty = GetPrimary(item);
         if (KeyProperty == null) return null;
         return KeyProperty.Name;
     }
-    public static PropertyInfo GetPrimary(Type item)
+    public static PropertyInfo? GetPrimary(Type item)
     {
         return GetKey(item, "PrimaryKey");
     }
 
-    public string GetPrimaryKeyValue()
+    public string? GetPrimaryKeyValue()
     {
         return GetPrimary(this.GetType()).GetValue(this).ToString();
     }
@@ -205,7 +201,8 @@ public class Base : IBase
 
     public static void AddtoDBCollection(Type item, Dictionary<String, IBase> instance)
     {
-        var newi = (Base)Activator.CreateInstance(item);
+        Base newi = (Base)Activator.CreateInstance(item);
+        if (newi == null) return;
         var guid = Guid.NewGuid().ToString();
         newi.IsDirty = true;
         item.GetRuntimeProperty(GetPrimaryKey(item)).SetValue(newi, guid);
@@ -214,7 +211,7 @@ public class Base : IBase
 
     #endregion
 
-    public async static Task<Dictionary<String, IBase>> PopulateDictionary(IDBObject DBLocation, Type item)
+    public async static Task<Dictionary<String, IBase>?> PopulateDictionary(IDBObject DBLocation, Type item)
     {
         var col = await DBLocation.PopulateCollectionAsync(item);
         return col.Cast<IBase>().ToDictionary(a => a.GetPrimaryKeyValue());
@@ -244,7 +241,7 @@ public class Base : IBase
 
     public async static Task SaveDictionary(IDBObject DBLocation, Type CollectionType, Dictionary<String, IBase> CollectionToSave)
     {
-        IList<IBase> col = CollectionToSave.Values.ToList();
+        IList col = CollectionToSave.Values.ToList();
         await DBLocation.SaveCollectionAsync(CollectionType, col);
     }
 

@@ -6,9 +6,9 @@
 @if (Request.HasFormContentType)
 {
     // Save Form
-    IndexModel.HandleFormCollection(Request.Form);
+    await IndexModel.HandleFormCollection(Request.Form);
     // Reload Collection
-    Program.MainDBCollections = (Dictionary<Type, Dictionary<String, IBase>>)Base.PopulateMainCollection(Program.DBLocation);
+    Program.MainDBCollections = (Dictionary<Type, Dictionary<String, IBase>>) await Base.PopulateMainCollection(Program.DBLocation);
 }
 @{
     IBase[] rows = IndexModel.GetRows(Request);

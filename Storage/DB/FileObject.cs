@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Collections;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Core.DB
 {
@@ -57,6 +58,41 @@ namespace Core.DB
         }
 
         public void SaveObject(Type objectType, IBase item, bool listsave)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SaveCollection<T>(IList<IBase> col)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SaveObjectAsync<T>(IBase item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IList> PopulateCollectionAsync(Type type)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IList> PopulateCollectionAsync(Type itemType, Type listType, IList col, string ID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SaveCollectionAsync<T>(IList<IBase> col)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IBase> GetObjectAsync<T>(string ID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SaveCollectionAsync(Type type, IList<IBase> col)
         {
             throw new NotImplementedException();
         }

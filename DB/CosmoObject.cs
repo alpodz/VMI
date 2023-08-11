@@ -4,6 +4,7 @@ using Microsoft.Azure.Cosmos.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections;
+using System.Reflection.Metadata.Ecma335;
 
 namespace CosmosDB
 {
@@ -13,7 +14,7 @@ namespace CosmosDB
         Container? _container;
         Database? _db;
         //Type? _typeofContainer;
-        
+
         string ContainerName { get { return "Objects"; } }
         string PartitionKey { get { return "Partition"; } }
 
@@ -35,61 +36,15 @@ namespace CosmosDB
 
         string IDBObject.Name { get; set; }
 
-        public void PopulateCollection(Type coltype, Type collistType, ref IList? col, string ID)
+        #region Private Generic Methods
+                
+        public async Task SaveCollection(Type type, IList<IBase> col)
         {
-            if (col == null) return;
-            var task = PopulationCollectionAsync(coltype, collistType, col, ID);
-            task.Wait();
-            var result = task.Result;
-            if (result == null) return;
-            col = task.Result;
+            foreach (IBase item in col)
+                await Save(type, item, true);
         }
 
-        private async Task<IList?> PopulationCollectionAsync(Type colType, Type listType, IList colListType, String QueryAddOn)
-        {
-            var query = new QueryDefinition($"SELECT * FROM _{ContainerName} c WHERE c.Partition LIKE '_{colType.Name}_{QueryAddOn}'");
-            if (_container == null) return colListType;
-            using (FeedIterator iter = this._container.GetItemQueryStreamIterator(query))
-            {
-                while (iter.HasMoreResults)
-                {
-                    using ResponseMessage response = await iter.ReadNextAsync();
-                    if (response == null) return colListType;
-                    String output = new StreamReader(response.Content).ReadToEnd();
-                    var obj = JObject.Parse(output);
-                    obj.TryGetValue("Documents", StringComparison.InvariantCultureIgnoreCase,out var _documents);
-                    if (_documents == null) return colListType;
-                    var result = JsonConvert.DeserializeObject(_documents.ToString(), listType);
-                    if (result == null) return colListType;
-                    var result2 = (IList)result;
-                    //if (colListType.Count == 0) colListType = result2;
-                    //else
-                        foreach (Base item in result2)
-                    {
-                        item.IsNew = false;
-                        colListType.Add(item);
-                    }
-                }
-            }
-            return colListType;
-        }
-
-        //private static MyCosmosResponse Mine(byte[] contents)
-        //{          
-        //    var jsonreader = new System.Text.Json.Utf8JsonReader(contents);
-        //    //var next = jsonreader.GetString();
-
-        //    var response = System.Text.Json.JsonSerializer.Deserialize<MyCosmosResponse>(ref jsonreader); //, MyCosmosResponse);
-        //    return response;
-        //}
-
-        public async void SaveCollection(Type collectionType, IList col)
-        {            
-            foreach (Base item in col)
-                await Save(collectionType, item, true);
-        }
-
-        private async Task Save(Type objectType, IBase item, bool listsave)
+        private async Task Save(Type type, IBase item, bool listsave)
         {
             if (_container == null) return;
             var BaseItem = (Base)item;
@@ -98,17 +53,80 @@ namespace CosmosDB
             if (listsave && !BaseItem.IsDirty && !BaseItem.IsNew) return;
             using MemoryStream savestream = new();
             using StreamWriter writer = new(savestream);
-            writer.Write(System.Text.Json.JsonSerializer.Serialize(item, objectType));
+            writer.Write(System.Text.Json.JsonSerializer.Serialize(item, type));
             writer.Flush();
             savestream.Position = 0;
             var upserteditem = await _container.UpsertItemStreamAsync(savestream, new PartitionKey(BaseItem.Partition));
             BaseItem.IsDirty = false;
         }
 
-        public async void SaveObject(Type objectType, IBase item, bool listsave)
+        #endregion
+
+        public async Task<IList?> PopulateTypeCollection(Type item, String ID = "%")
         {
-            await Save(objectType, item, listsave);
+            var listType = typeof(List<>);
+            var constr = listType.MakeGenericType(item);
+            var instance = (IList?)Activator.CreateInstance(constr);
+            if (instance == null)
+                return instance;
+            //Name = item.Name;
+            return await PopulateCollectionAsync(item, constr, instance, ID);
         }
+
+        public async Task SaveObjectAsync<T>(IBase item)
+        {
+            await Save(typeof(T), item, false);
+        }
+
+        public async Task<IList?> PopulateCollectionAsync(Type type)
+        {
+            return await PopulateTypeCollection(type);
+        }
+
+        public async Task SaveCollectionAsync(Type type, IList col)
+        {
+            foreach (IBase item in col)
+                await Save(type, item, true);
+        }
+
+        public async Task<IBase?> GetObjectAsync<T>(string ID)
+        {
+            var col = await PopulateTypeCollection(typeof(T), ID);
+            return (IBase?)(col == null ? default : col[0]);
+        }
+
+        public async Task<IList?> PopulateCollectionAsync(Type itemType, Type listType, IList col, string ID)
+        {
+            var query = new QueryDefinition($"SELECT * FROM _{ContainerName} c WHERE c.Partition LIKE '_{itemType.Name}_{ID}'");
+            if (_container == null) return col;
+            using (FeedIterator iter = this._container.GetItemQueryStreamIterator(query))
+            {
+                while (iter.HasMoreResults)
+                {
+                    using ResponseMessage response = await iter.ReadNextAsync();
+                    if (response == null)
+                        return col;
+
+                    String output = new StreamReader(response.Content).ReadToEnd();
+                    var obj = JObject.Parse(output);
+                    if (!obj.TryGetValue("Documents", StringComparison.InvariantCultureIgnoreCase, out var _documents))
+                        return col;
+
+                    var result = JsonConvert.DeserializeObject(_documents.ToString(), listType);
+                    if (result == null)
+                        return col;
+
+                    var result2 = (IList)result;
+                    foreach (IBase item in result2)
+                    {
+                        item.MarkOld();
+                        col.Add(item);
+                    }
+                }
+            }
+            return col;
+        }
+
     }
 
 }

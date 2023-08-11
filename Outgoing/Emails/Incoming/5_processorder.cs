@@ -18,7 +18,7 @@ public class processorder
         if (request == null) return;
         string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
-        var DB = Base.PopulateMainCollection(DBLocation);
+        var DB = await Base.PopulateMainCollection(DBLocation);
 
         // make/schedule orders
         CheckFulfillment(request, DB);
@@ -30,11 +30,7 @@ public class processorder
             order.TotalAmountOrdered = request.OrderedPartTotal;
             order.CustomerOrderID = order.id;
             order.id = Guid.NewGuid().ToString();
-            var Orders = new Dictionary<string, IBase>
-            {
-                { order.id, order }
-            };
-            Base.SaveCollection(DBLocation, typeof(Order), Orders);
+            await DBLocation.SaveObjectAsync<Order>(order);
         }
         outqueue.Add(request);
     }

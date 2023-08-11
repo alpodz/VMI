@@ -7,7 +7,7 @@ using System.Collections.Generic;
 {
     void MarkOld();
     void MarkDeleted();
-    string GetPrimaryKeyValue();
+    string? GetPrimaryKeyValue();
     void PopulateDerivedFields(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, IBase>> MainDB);
     Dictionary<Type, Dictionary<String, IBase>> MainDBCollections { get; set; }
     IDBObject DBLocation { get; set; }

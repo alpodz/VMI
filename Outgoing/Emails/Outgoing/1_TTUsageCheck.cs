@@ -25,7 +25,7 @@ public class TTUsageChecker
 
         string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
-        var MainDBCollections = Base.PopulateMainCollection(DBLocation);
+        var MainDBCollections = await Base.PopulateMainCollection(DBLocation);
 
         // only process if these items are set
         if (MainDBCollections == null) return;
@@ -51,7 +51,7 @@ public class TTUsageChecker
         }
     }
 
-    private static void SendAdmin(CosmoObject DBLocation, Part objPart, String AdminEmail)
+    private static async void SendAdmin(CosmoObject DBLocation, Part objPart, String AdminEmail)
     {
         // we're going to push the required by date because perhaps it's 'too late', we'll make it the current date
         var requiredby = objPart.DateRequiredBy.Value;
@@ -75,7 +75,7 @@ public class TTUsageChecker
 
         // Puts it in the Grid
         objOrder.DateAdminLastNotified = DateTime.Now.Date;
-        Base.SaveObject(DBLocation,typeof(Order), objOrder);
+        await DBLocation.SaveObjectAsync<Order>(objOrder);
 
         var body = $"{objOrder.Message} {objOrder.VendorPartName} with a Quantity of: {objOrder.TotalAmountOrdered} and is needed by: {objOrder.RequiredBy.GetValueOrDefault(DateTime.MinValue)}";
         if (objPart.DateRequiredBy.GetValueOrDefault(DateTime.MinValue) < DateTime.Now.Date) body += " WARNING: The Date Required is in the Past, we will request the current date plus lead time";

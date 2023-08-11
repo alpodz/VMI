@@ -15,14 +15,11 @@ public class processrequiredorder
         if (response == null) return;
         string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
-        var Orders = Base.PopulateDictionary(DBLocation, typeof(Order), response.OrderedOrderID);
+        var _Order =(Order)await DBLocation.GetObjectAsync<Order>(response.OrderedOrderID);
 
-        if (!Orders.TryGetValue(response.OrderedOrderID, out var founditem)) return;
-
-        founditem.SendOrderService = new CosmosDB.AzureQueue(Environment.GetEnvironmentVariable("AzureWebJobsStorage"), nameof(ExchangedOrders.OutgoingMessageType.generateorder));
-        Order ord = (Order)founditem;
-        ord.DateOrdered = DateTime.Now.Date;
-                
-        Base.SaveObject(DBLocation, typeof(Order), ord);
+        if (_Order == null) return;
+        ((IBase)_Order).SendOrderService = new CosmosDB.AzureQueue(Environment.GetEnvironmentVariable("AzureWebJobsStorage"), nameof(ExchangedOrders.OutgoingMessageType.generateorder));
+        _Order.DateOrdered = DateTime.Now.Date;
+        await DBLocation.SaveObjectAsync<Order>(_Order);
     }
 }

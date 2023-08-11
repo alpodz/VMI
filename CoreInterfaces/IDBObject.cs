@@ -11,7 +11,7 @@ namespace Interfaces
         Task SaveObjectAsync<T>(IBase item);
         Task<IList?> PopulateCollectionAsync(Type type);
         Task<IList?> PopulateCollectionAsync(Type itemType, Type listType, IList col, string ID);
-        Task SaveCollectionAsync(Type type, IList<IBase> col);
+        Task SaveCollectionAsync(Type type, IList col);
         Task<IBase?> GetObjectAsync<T>(string ID);
     }
 }

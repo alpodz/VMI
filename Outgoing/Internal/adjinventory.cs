@@ -21,27 +21,25 @@ namespace Functions.Internal
 
             if (order.VendorOrder)
             {
-                var Parts = Base.PopulateDictionary(DBLocation, typeof(Part), order.PartID);
-                if (Parts.Count == 0) return;
-                var objPart = (Part)Parts[order.PartID];
+                var objPart =(Part) await DBLocation.GetObjectAsync<Part>(order.PartID);
+                if (objPart == null) return;
                 objPart.InStock += order.TotalAmountOrdered;
                 order.Message = "Vendor - Shipment Arrived.";
-                Base.SaveCollection(DBLocation, typeof(Part), Parts);
+                await DBLocation.SaveObjectAsync<Part>(objPart);
             }
             else
             {
-                var Recipe = Base.PopulateDictionary(DBLocation, typeof(Recipe));
-                foreach (var objAssocParts in Recipe.Cast<Recipe>().Where(a => a.CreatedPartID == order.PartID))
+                var Recipes = await DBLocation.PopulateTypeCollection(typeof(Recipe));
+                foreach (var objAssocParts in Recipes.Cast<Recipe>().Where(a => a.CreatedPartID == order.PartID))
                 {
-                    var Parts = Base.PopulateDictionary(DBLocation, typeof(Part), objAssocParts.PartID);
-                    if (Parts.Count == 0) return;
-                    var objPart = (Part)Parts[objAssocParts.PartID];
+                    var objPart =(Part) await DBLocation.GetObjectAsync<Part>(objAssocParts.PartID);
+                    if (objPart == null) return;
                     objPart.InStock -= objAssocParts.NumberOfParts;
-                    Base.SaveObject(DBLocation, typeof(Part), objPart);
+                    await DBLocation.SaveObjectAsync<Part>(objPart);
                 }
                 order.Message = "Customer - Shipment Ready.";
             }
-            Base.SaveObject(DBLocation, typeof(Order), order);
+            await DBLocation.SaveObjectAsync<Order>(order);
 
         }
     }

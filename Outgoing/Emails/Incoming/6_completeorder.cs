@@ -14,12 +14,12 @@ public static class completeorder
         if (response == null) return;
         string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
-        var Orders = Base.PopulateDictionary(DBLocation, typeof(Order), response.OrderedOrderID);
-
+        var Orders = await DBLocation.PopulateTypeCollection(typeof(Order), response.OrderedOrderID);
+        
         // update the order placed
-        if (Orders.TryGetValue(response.OrderedOrderID, out var founditem))
+        if (Orders != null && Orders.Count == 1)
         {
-            Order orig = (Order)founditem;
+            Order orig = (Order)Orders[0];
             if (response.orders.Count == 1 && response.orders[0].TotalAmountOrdered == 0) // negative response?
             {
                 orig.Message = response.orders[0].Message;
@@ -54,11 +54,11 @@ public static class completeorder
                     order.CustomerOrderID = order.id;
                     order.WorkcenterID = "0";
                     order.IsDirty = true;
-                    Orders.Add(guid, order);
+                    Orders.Add(order);
                 }
             }
-
-            Base.SaveCollection(DBLocation, typeof(Order), Orders);
+            
+            await DBLocation.SaveCollectionAsync(typeof(Order), Orders);
         }
 
     }

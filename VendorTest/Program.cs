@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace VendorTest
 {
@@ -34,12 +35,12 @@ namespace VendorTest
                 webBuilder.UseStartup<Startup>();
             });
 
-        public void Init(IConfiguration configfromstartup)
+        public async Task Init(IConfiguration configfromstartup)
         {
             Configuration = configfromstartup;
             //DBLocation = new FileObject(Configuration["DBLocation"]);
             DBLocation = new CosmosDB.CosmoObject(Configuration["ConnectionStrings:AzureCosmos"]);
-            MainDBCollections = Base.PopulateMainCollection(DBLocation);
+            MainDBCollections = await Base.PopulateMainCollection(DBLocation);
             SendOrderService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], nameof(ExchangedOrders.OutgoingMessageType.generateorder));
             AdjInventoryService = new CosmosDB.AzureQueue(Configuration["AzureWebJobsStorage"], nameof(ExchangedOrders.InternalServices.adjinventory));
         }

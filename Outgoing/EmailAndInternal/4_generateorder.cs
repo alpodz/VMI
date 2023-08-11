@@ -4,6 +4,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 public class generateorder
 {
@@ -19,7 +20,7 @@ public class generateorder
     {
         string myappsettingsValue = await new CosmosDB.Config().GetValue("AzureCosmos");
         var DBLocation = new CosmosDB.CosmoObject(myappsettingsValue);
-        var MainDBCollections = Base.PopulateMainCollection(DBLocation);
+        var MainDBCollections = await Base.PopulateMainCollection(DBLocation);
 
         log.LogInformation($"C# queue trigger function processed message: {inorder.CustomerOrderID}");
         // only process if these items are set

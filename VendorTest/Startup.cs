@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Threading.Tasks;
 
 namespace VendorTest
 {
@@ -14,7 +15,7 @@ namespace VendorTest
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-            program.Init(Configuration);
+            program.Init(Configuration).GetAwaiter().GetResult();
         }
 
         public IConfiguration Configuration { get; }

@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace VendorTest.Pages
 {
@@ -95,7 +96,7 @@ namespace VendorTest.Pages
                 }
                 return rows;
             }
-            public static void HandleFormCollection(Microsoft.AspNetCore.Http.IFormCollection fm)
+            public static async Task HandleFormCollection(Microsoft.AspNetCore.Http.IFormCollection fm)
             {
                 // Navigation
                 var nextkey = fm.Keys.FirstOrDefault(a => a.StartsWith("_Next", StringComparison.InvariantCultureIgnoreCase));
@@ -120,7 +121,7 @@ namespace VendorTest.Pages
 
                 if (fm.ContainsKey("id") || fm.ContainsKey("_Add") || fm.ContainsKey("_Save"))
                 {
-                    BindFormCollectionToDbCollection(fm);
+                    await BindFormCollectionToDbCollection(fm);
                     return;
                 }
                 return;
@@ -161,7 +162,7 @@ namespace VendorTest.Pages
                 return null;
             }
 
-            private static void BindFormCollectionToDbCollection(Microsoft.AspNetCore.Http.IFormCollection fm)
+            private static async Task BindFormCollectionToDbCollection(Microsoft.AspNetCore.Http.IFormCollection fm)
             {
                 if (fm == null) return;
 
@@ -171,7 +172,7 @@ namespace VendorTest.Pages
                     Type CoreType = CoreAssembly.GetType(fm["_Add_Type"].ToString());
                     if (CoreType == null) return;
                     Base.AddtoDBCollection(CoreType, Program.MainDBCollections[CoreType]);
-                    Base.SaveCollection(Program.DBLocation, CoreType, Program.MainDBCollections[CoreType]);
+                    await Base.SaveDictionary(Program.DBLocation, CoreType, Program.MainDBCollections[CoreType]);
 
                     return;
                 }
@@ -184,7 +185,7 @@ namespace VendorTest.Pages
                         if (fm.ContainsKey(i + "_Delete"))
                         {
                             Program.MainDBCollections[thistype][fm["id"][i]].MarkDeleted();
-                            Base.SaveCollection(Program.DBLocation, thistype, Program.MainDBCollections[thistype]);
+                            await Base.SaveDictionary(Program.DBLocation, thistype, Program.MainDBCollections[thistype]);
                             break;
                         }
                         else
@@ -205,7 +206,7 @@ namespace VendorTest.Pages
                                     item.SetProperty(prop, null);
                             }
                         }
-                        Base.SaveCollection(Program.DBLocation, thistype, Program.MainDBCollections[thistype]);
+                        await Base.SaveDictionary(Program.DBLocation, thistype, Program.MainDBCollections[thistype]);
                     }
                 }
             }
