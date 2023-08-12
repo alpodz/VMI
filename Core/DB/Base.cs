@@ -1,11 +1,12 @@
 ﻿using Interfaces;
 using System.Collections;
+using System.Linq.Expressions;
 using System.Reflection;
 
 public class Base : IBase
 {
     private IDBObject? _DBLocation;
-    private Dictionary<Type, Dictionary<String, IBase>>? _MainDBCollections;
+    private Dictionary<Type, Dictionary<String, IBase>> _MainDBCollections = new Dictionary<Type, Dictionary<string, IBase>>();
     public static IQueueService? _SendOrderService;
     public static IQueueService? _AdjInventoryService;
 
@@ -35,7 +36,7 @@ public class Base : IBase
     [System.AttributeUsage(System.AttributeTargets.Property)]
     public class DisplayProperty : System.Attribute
     {
-        public String _value;
+        public String _value = string.Empty;
 
         public String GetValue()
         {
@@ -46,9 +47,9 @@ public class Base : IBase
     [System.AttributeUsage(System.AttributeTargets.Property)]
     public class PartitionKey : System.Attribute
     {
-        public String _value;
+        public String? _value;
 
-        public String GetValue()
+        public String? GetValue()
         {
             return _value;
         }
@@ -124,14 +125,17 @@ public class Base : IBase
     #endregion
 
     #region Property Related
-    public static PropertyInfo? GetKey(Type item, String TypeOfKey)
+    public static PropertyInfo GetKey(Type item, String TypeOfKey)
     {
-        if (item == null || String.IsNullOrEmpty(TypeOfKey)) return null;
+        if (item == null)
+            throw new Exception("Parameter: Type item is null");
+        if (String.IsNullOrEmpty(TypeOfKey)) 
+            throw new Exception(item.Name + " has no " + TypeOfKey);
         foreach (var prop in item.GetProperties())
             foreach (var ca in prop.CustomAttributes)
                 if (ca.AttributeType.Name == TypeOfKey)
                     return prop;
-        return null;
+        throw new Exception(item.Name + " has no " + TypeOfKey);
     }
 
     public static bool GetAttribute(PropertyInfo prop, Type attrib, out Object? output)
@@ -151,33 +155,40 @@ public class Base : IBase
     public static string GetDisplayProperty(PropertyInfo prop, Type attrib, string DefaultValue)
     {
         var attribs = prop.GetCustomAttributes(attrib, false);
-        if (attribs.Length == 0) return DefaultValue;
-        return ((DisplayProperty)attribs[0]).GetValue();
+        if (attribs.Length == 0 || attribs[0] == null) return DefaultValue;
+        if (attribs[0] is DisplayProperty disp && !string.IsNullOrEmpty(disp.GetValue()))
+            return disp.GetValue();
+        return DefaultValue;
     }
 
-    public static string? GetPrimaryKey(Type item)
+    public static string GetPrimaryKey(Type item)
     {
-        var KeyProperty = GetPrimary(item);
-        if (KeyProperty == null) return null;
-        return KeyProperty.Name;
+        if (GetPrimary(item) is PropertyInfo KeyProperty)
+            return KeyProperty.Name;
+        throw new Exception("Primary Key is not set for type: " + item.Name);
+
     }
-    public static PropertyInfo? GetPrimary(Type item)
+    public static PropertyInfo GetPrimary(Type item)
     {
-        return GetKey(item, "PrimaryKey");
+        // someone forgot to set primary;
+        if (GetKey(item, "PrimaryKey") is PropertyInfo primarykey) 
+            return primarykey;
+        throw new Exception("Primary Key is not set for type: " + item.Name);
     }
 
-    public string? GetPrimaryKeyValue()
+    public string GetPrimaryKeyValue()
     {
-        return GetPrimary(this.GetType()).GetValue(this).ToString();
+        // throw exception, this item has no Primary Key set!
+        if (GetPrimary(GetType()) is PropertyInfo primary && primary.GetValue(this) is string value)
+            return value;
+        throw new Exception("Primary Key Value for type: " + GetType().Name);
     }
 
     public void SetProperty(PropertyInfo propertyinfo, string PropertyValue)
     {
-        if (propertyinfo == null) return;
-        if (propertyinfo.GetValue(this) == null && PropertyValue == null) return;
-        if (propertyinfo.PropertyType == typeof(string) && propertyinfo.GetValue(this) == null && PropertyValue == string.Empty) return;
-        if ((propertyinfo.GetValue(this) == null && PropertyValue != null) || propertyinfo.GetValue(this).ToString() != PropertyValue)
-        {
+        if (propertyinfo is not PropertyInfo prop) return;
+        if ((prop.GetValue(this) as String ?? String.Empty) != (PropertyValue ?? String.Empty))
+        { 
             if (PropertyValue == null) propertyinfo.SetValue(this, null);
             else if (propertyinfo.PropertyType == typeof(decimal)) propertyinfo.SetValue(this, Convert.ToDecimal(PropertyValue));
             else if (propertyinfo.PropertyType == typeof(Int32)) propertyinfo.SetValue(this, Convert.ToInt32(PropertyValue));
@@ -201,17 +212,19 @@ public class Base : IBase
 
     public static void AddtoDBCollection(Type item, Dictionary<String, IBase> instance)
     {
-        Base newi = (Base)Activator.CreateInstance(item);
-        if (newi == null) return;
+        if (item == null) return;
+        if (Activator.CreateInstance(item) is not Base newi) return;
+        if (GetPrimaryKey(item) is not string primarykey) return;
+        if (item.GetRuntimeProperty(primarykey) is not PropertyInfo prop) return;
         var guid = Guid.NewGuid().ToString();
         newi.IsDirty = true;
-        item.GetRuntimeProperty(GetPrimaryKey(item)).SetValue(newi, guid);
+        prop.SetValue(newi, guid);
         instance.Add(guid, newi);
     }
 
     #endregion
 
-    public async static Task<Dictionary<String, IBase>?> PopulateDictionary(IDBObject DBLocation, Type item)
+    public async static Task<Dictionary<String, IBase>> PopulateDictionary(IDBObject DBLocation, Type item)
     {
         var col = await DBLocation.PopulateCollectionAsync(item);
         return col.Cast<IBase>().ToDictionary(a => a.GetPrimaryKeyValue());
@@ -258,13 +271,20 @@ public class Base : IBase
     // Note: This is here so that children can implement
     public void PopulateDerivedFields(IDBObject DBLocation, ref Dictionary<Type, Dictionary<String, IBase>> MainDB) { }
     [DisplayWidth(0)]
-    public string Partition { get { return $"_{this.GetType().Name}_{Base.GetKey(this.GetType(), "PartitionKey").GetValue(this)}"; } }
+    public string? Partition
+    {
+        get
+        {
+            if (GetKey(GetType(), "PartitionKey") is not PropertyInfo prop) return null;
+            return $"_{GetType().Name}_{prop.GetValue(this)}";
+        }
+    }
 
     Dictionary<Type, Dictionary<string, IBase>> IBase.MainDBCollections { get => _MainDBCollections; set => _MainDBCollections = value; }
-    IDBObject IBase.DBLocation { get => _DBLocation; set => _DBLocation = value; }
+    IDBObject? IBase.DBLocation { get => _DBLocation; set => _DBLocation = value; }
 
-    IQueueService IBase.AdjInventoryService { get => _AdjInventoryService; set => _AdjInventoryService = value; }
-    IQueueService IBase.SendOrderService { get => _SendOrderService; set => _SendOrderService = value; }
+    IQueueService? IBase.AdjInventoryService { get => _AdjInventoryService; set => _AdjInventoryService = value; }
+    IQueueService? IBase.SendOrderService { get => _SendOrderService; set => _SendOrderService = value; }
 
     public void MarkDeleted() { IsDeleted = true; }
     public void MarkOld() { IsNew = false; }

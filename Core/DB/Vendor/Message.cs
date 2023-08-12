@@ -10,13 +10,13 @@ namespace DB.Vendor
         #region "Properties"
 
         [PrimaryKey]
-        public string id { get; set; }      
-        public string MessageText { get; set; }
+        public string? id { get; set; }      
+        public string? MessageText { get; set; }
         public DateTime MessageDate { get; set; }
 
         [PartitionKey]
         [ForeignKey(typeof(Order))]
-        public string OrderID { get; set; }
+        public string? OrderID { get; set; }
 
         #endregion
     }

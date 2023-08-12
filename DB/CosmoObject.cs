@@ -1,10 +1,8 @@
 ﻿using Interfaces;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Cosmos.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections;
-using System.Reflection.Metadata.Ecma335;
 
 namespace CosmosDB
 {
@@ -34,8 +32,6 @@ namespace CosmosDB
             _container = await _db.CreateContainerIfNotExistsAsync(ContainerName, "/" + PartitionKey);
         }
 
-        string IDBObject.Name { get; set; }
-
         #region Private Generic Methods
                 
         public async Task SaveCollection(Type type, IList<IBase> col)
@@ -62,14 +58,13 @@ namespace CosmosDB
 
         #endregion
 
-        public async Task<IList?> PopulateTypeCollection(Type item, String ID = "%")
+        public async Task<IList> PopulateTypeCollection(Type item, String ID = "%")
         {
             var listType = typeof(List<>);
             var constr = listType.MakeGenericType(item);
-            var instance = (IList?)Activator.CreateInstance(constr);
-            if (instance == null)
-                return instance;
-            //Name = item.Name;
+            if (Activator.CreateInstance(constr) is not object actinstance)
+                throw new Exception("The Type: " + item.Name + " has no constructor which has no parameter!");
+            var instance = (IList)actinstance;
             return await PopulateCollectionAsync(item, constr, instance, ID);
         }
 
@@ -78,7 +73,7 @@ namespace CosmosDB
             await Save(typeof(T), item, false);
         }
 
-        public async Task<IList?> PopulateCollectionAsync(Type type)
+        public async Task<IList> PopulateCollectionAsync(Type type)
         {
             return await PopulateTypeCollection(type);
         }
@@ -95,10 +90,13 @@ namespace CosmosDB
             return (IBase?)(col == null ? default : col[0]);
         }
 
-        public async Task<IList?> PopulateCollectionAsync(Type itemType, Type listType, IList col, string ID)
+        public async Task<IList> PopulateCollectionAsync(Type itemType, Type listType, IList col, string ID)
         {
             var query = new QueryDefinition($"SELECT * FROM _{ContainerName} c WHERE c.Partition LIKE '_{itemType.Name}_{ID}'");
-            if (_container == null) return col;
+            
+            if (_container == null) 
+                return col;
+            
             using (FeedIterator iter = this._container.GetItemQueryStreamIterator(query))
             {
                 while (iter.HasMoreResults)
@@ -107,26 +105,29 @@ namespace CosmosDB
                     if (response == null)
                         return col;
 
-                    String output = new StreamReader(response.Content).ReadToEnd();
+                    using var reader = new StreamReader(response.Content);
+                    String output = await reader.ReadToEndAsync();
                     var obj = JObject.Parse(output);
+
                     if (!obj.TryGetValue("Documents", StringComparison.InvariantCultureIgnoreCase, out var _documents))
                         return col;
 
                     var result = JsonConvert.DeserializeObject(_documents.ToString(), listType);
+                    
                     if (result == null)
                         return col;
 
-                    var result2 = (IList)result;
-                    foreach (IBase item in result2)
+                    var resultList = (IList)result;
+                    foreach (IBase item in resultList)
                     {
                         item.MarkOld();
                         col.Add(item);
                     }
                 }
             }
+
             return col;
         }
-
     }
 
 }

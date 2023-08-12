@@ -35,7 +35,6 @@
         [Label("Saturday Hours")]
         [DisplayWidth(6)]
 
-        public int SatWorkHours { get; set; }
-                     
+        public int SatWorkHours { get; set; }                     
     }
 }

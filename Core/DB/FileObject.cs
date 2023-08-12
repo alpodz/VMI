@@ -10,39 +10,42 @@ namespace Core.DB
 
         private static string _DBLocation = string.Empty;
 
-        public static string FileFormat = ".json";
+        private static readonly string FileFormat = ".json";
 
-        public string _Name = string.Empty;
-        public string Name
+        private static string? _Name;
+        private static string? Name
         {
             get { return $"{_DBLocation}{_Name}{FileFormat}"; }
             set { _Name = value; }
         }
 
-        public async Task<IList?> PopulateCollectionAsync(Type itemType, Type colType, IList col, string ID)
+        public async Task<IList> PopulateCollectionAsync(Type itemType, Type colType, IList col, string ID)
         {
-            if (!File.Exists(Name)) return null;
+            Name = itemType.Name;
+            if (!File.Exists(Name)) throw new Exception(Name + "does not exist.");
             using FileStream openStream = File.OpenRead(Name);
-            return (IList?)await JsonSerializer.DeserializeAsync(openStream, colType);
+            var returned = await JsonSerializer.DeserializeAsync(openStream, colType);
+            if (returned == null) return col;
+            return (IList)returned;
         }
 
         public async Task SaveCollectionAsync(Type CollectionType, IList CollectionToSave)
         {
             var listType = typeof(List<>);
             var constr = listType.MakeGenericType(CollectionType);
-            var instance = (IList?)Activator.CreateInstance(constr);
+            if (Activator.CreateInstance(constr) is not IList instance)
+                throw new Exception(CollectionType.Name + " has no parameterless constructor");
             foreach (var obj in CollectionToSave)
-            {
-                instance?.Add(obj);
-            }
+                instance.Add(obj);
             using MemoryStream ms = new();
             using var writer = new Utf8JsonWriter(ms);
             System.Text.Json.JsonSerializer.Serialize(writer, instance, constr);
-            await SaveToFileSystem(System.Text.Encoding.UTF8.GetString(ms.ToArray()));
+            await SaveToFileSystem(System.Text.Encoding.UTF8.GetString(ms.ToArray()), CollectionType);
         }
 
-        private async Task SaveToFileSystem(string json)
+        private static async Task SaveToFileSystem(string json, Type CollectionType)
         {
+            Name = CollectionType.Name;
             string tempFile = Path.GetTempFileName();
             await File.WriteAllTextAsync(tempFile, json);
             if (File.Exists(Name))
@@ -50,21 +53,31 @@ namespace Core.DB
             File.Move(tempFile, Name);
         }
 
-        public Task SaveObjectAsync<T>(IBase item)
+        public static Task AsyncException()
         {
-            throw new NotImplementedException();
+            throw new Exception("Not Implemented!");
         }
 
-        public async Task<IList?> PopulateCollectionAsync(Type type)
+        public async Task SaveObjectAsync<T>(IBase item)
+        {
+            await AsyncException();
+        }
+
+        public async Task<IList> PopulateCollectionAsync(Type type)
         {
             var listType = typeof(List<>);
             var constr = listType.MakeGenericType(type);
-            return await PopulateCollectionAsync(type, constr, null, string.Empty);
+            if (Activator.CreateInstance(constr) is not IList instance)
+                throw new Exception(type.Name + " has no parameterless constructor");
+
+
+            return await PopulateCollectionAsync(type, constr, instance, string.Empty);
         }
 
         public async Task<IBase?> GetObjectAsync<T>(string ID)
         {
-            throw new NotImplementedException();
+            await AsyncException();
+            return null;
         }
 
     }

@@ -76,12 +76,13 @@ namespace DB.Vendor
             if (!Populated) 
             {
                 foreach (Order objOrder in MainDB[typeof(Order)].Values
-                    .Cast<Order>().Where(a => a.PartID == id && a.VendorOrder == false && a.DateScheduled.HasValue).OrderByDescending(a=> a.DateScheduled.Value))
+                    .Cast<Order>().Where(a => a.PartID == id && a.VendorOrder == false && a.DateScheduled.HasValue).OrderByDescending(a=> !a.DateScheduled.HasValue?DateTime.MinValue: a.DateScheduled))
                 {
                     NumberOfDaysForEstimation++;
                     Last15Days += objOrder.TotalAmountOrdered;
                     foreach (Recipe objAssociatedPart in MainDB[typeof(Recipe)].Values.Cast<Recipe>().Where(a => a.CreatedPartID == id))
                     {
+                        if (objAssociatedPart.PartID == null) continue;
                         Part objPart = (Part)MainDB[typeof(Part)][objAssociatedPart.PartID];
                         objPart.Last15Days += objOrder.TotalAmountOrdered * objAssociatedPart.NumberOfParts;
                     }

@@ -13,6 +13,11 @@ namespace VendorTest.Pages
 {
     public class IndexModel : PageModel
     {
+        // Improvement needed: We're going to check Properties when they are Arrays (of IBase).
+        // If they are, these will be 'links off of this' (the property however will be read by the index as the new 'object'
+        // Also for performance, we're going to try and reduce the page to only load existance of the type (for menu building)
+        // The collection won't be loaded until the type is selected.
+
         public static List<Type> ReferencedTables(Type currentType)
         {
             List<Type> typelist = new List<Type>();
